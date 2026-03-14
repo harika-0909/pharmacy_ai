@@ -1,0 +1,441 @@
+import streamlit as st
+import pandas as pd
+
+from modules import dashboard
+from modules import doctor
+from modules.caregiver import show as show_caregiver
+from modules import pharmacy
+from modules import admin
+from modules import ai_prediction
+from modules import alerts
+from modules import login
+from modules import pdf_generator
+from modules import patients
+from modules import orders
+
+st.set_page_config(
+    page_title="Smart Pharmacy AI",
+    page_icon="💊",
+    layout="wide"
+)
+
+# ==================== MINIMALIST B&W THEME ====================
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ===== GLOBAL ===== */
+html, body, p, span, div, label, input, textarea, select, button, a,
+h1, h2, h3, h4, h5, h6, li, td, th, caption {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Preserve Streamlit's icon font for arrows, toggles etc */
+[data-testid="stExpanderToggleIcon"],
+.material-symbols-rounded,
+[class*="material"] {
+    font-family: 'Material Symbols Rounded' !important;
+}
+
+.stApp {
+    background: #000 !important;
+    color: #fff !important;
+}
+
+/* ===== TYPOGRAPHY ===== */
+h1 {
+    color: #fff !important;
+    font-weight: 900 !important;
+    letter-spacing: -1px;
+    font-size: 2rem !important;
+}
+h2 {
+    color: #fff !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px;
+    font-size: 1.5rem !important;
+}
+h3 {
+    color: #e0e0e0 !important;
+    font-weight: 600 !important;
+    font-size: 1.15rem !important;
+}
+h4, h5, h6, p, span, div, label {
+    color: #e0e0e0 !important;
+}
+a { color: #999 !important; }
+
+/* ===== SIDEBAR ===== */
+section[data-testid="stSidebar"] {
+    background: #0a0a0a !important;
+    border-right: 1px solid #1a1a1a !important;
+}
+section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: #999 !important;
+}
+section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label {
+    background: transparent !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+    margin-bottom: 2px !important;
+    transition: all 0.2s ease !important;
+    color: #aaa !important;
+    font-size: 13px !important;
+}
+section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label:hover {
+    background: #111 !important;
+    border-color: #333 !important;
+    color: #fff !important;
+}
+section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked="true"] {
+    background: #fff !important;
+    border-color: #fff !important;
+    color: #000 !important;
+}
+section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked="true"] p,
+section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked="true"] span {
+    color: #000 !important;
+}
+
+/* ===== BUTTONS ===== */
+.stButton > button {
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease !important;
+}
+.stButton > button:hover {
+    background: #e0e0e0 !important;
+    transform: translateY(-1px);
+}
+.stButton > button:active {
+    transform: translateY(0) !important;
+    background: #ccc !important;
+}
+.stDownloadButton > button {
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+
+/* ===== INPUT FIELDS ===== */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stNumberInput > div > div > input {
+    background: #111 !important;
+    border: 1px solid #222 !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    transition: border-color 0.2s ease !important;
+}
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stNumberInput > div > div > input:focus {
+    border-color: #555 !important;
+    box-shadow: none !important;
+}
+.stTextInput > div > div > input::placeholder,
+.stTextArea > div > div > textarea::placeholder {
+    color: #444 !important;
+}
+
+/* Labels */
+.stTextInput > label, .stTextArea > label,
+.stNumberInput > label, .stSelectbox > label,
+.stMultiSelect > label, .stRadio > label, .stSlider > label {
+    color: #888 !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* ===== SELECT / MULTISELECT ===== */
+.stSelectbox > div > div,
+.stMultiSelect > div > div {
+    background: #111 !important;
+    border: 1px solid #222 !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+}
+[data-baseweb="select"] { background: transparent !important; }
+[data-baseweb="tag"] {
+    background: #fff !important;
+    color: #000 !important;
+    border-radius: 4px !important;
+}
+
+/* ===== TABS ===== */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0;
+    background: transparent;
+    border-bottom: 1px solid #1a1a1a;
+    padding: 0;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 0 !important;
+    padding: 10px 20px !important;
+    color: #666 !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    border-bottom: 2px solid transparent !important;
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    color: #fff !important;
+}
+.stTabs [aria-selected="true"] {
+    color: #fff !important;
+    border-bottom: 2px solid #fff !important;
+    background: transparent !important;
+}
+.stTabs [data-baseweb="tab-highlight"] { display: none !important; }
+.stTabs [data-baseweb="tab-border"] { display: none !important; }
+
+/* ===== METRICS ===== */
+[data-testid="stMetric"] {
+    background: #0a0a0a !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 12px !important;
+    padding: 18px !important;
+}
+[data-testid="stMetricValue"] {
+    color: #fff !important;
+    font-weight: 800 !important;
+    font-size: 26px !important;
+}
+[data-testid="stMetricLabel"] {
+    color: #666 !important;
+    font-weight: 500 !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* ===== EXPANDER ===== */
+[data-testid="stExpander"] {
+    background: #0a0a0a !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 10px !important;
+}
+.streamlit-expanderHeader {
+    color: #ddd !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+}
+
+/* ===== DATAFRAME ===== */
+[data-testid="stDataFrame"] {
+    border: 1px solid #1a1a1a !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
+/* ===== ALERTS ===== */
+.stSuccess, [data-baseweb="notification"][kind="positive"] {
+    background: #0a0a0a !important;
+    border-left: 3px solid #fff !important;
+    border-radius: 8px !important;
+}
+.stWarning, [data-baseweb="notification"][kind="warning"] {
+    background: #0a0a0a !important;
+    border-left: 3px solid #888 !important;
+    border-radius: 8px !important;
+}
+.stError, [data-baseweb="notification"][kind="negative"] {
+    background: #0a0a0a !important;
+    border-left: 3px solid #666 !important;
+    border-radius: 8px !important;
+}
+.stInfo, [data-baseweb="notification"][kind="info"] {
+    background: #0a0a0a !important;
+    border-left: 3px solid #444 !important;
+    border-radius: 8px !important;
+}
+
+/* ===== DIVIDER ===== */
+hr { border-color: #1a1a1a !important; }
+
+/* ===== FORM ===== */
+[data-testid="stForm"] {
+    background: #0a0a0a !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+}
+
+/* ===== FILE UPLOADER ===== */
+[data-testid="stFileUploader"] {
+    background: #0a0a0a !important;
+    border: 1px dashed #222 !important;
+    border-radius: 10px !important;
+    padding: 16px !important;
+}
+
+/* ===== PROGRESS ===== */
+.stProgress > div > div > div {
+    background: #fff !important;
+    border-radius: 4px !important;
+}
+.stProgress > div > div {
+    background: #1a1a1a !important;
+    border-radius: 4px !important;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #333; }
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media (max-width: 768px) {
+    .stApp { padding: 0 !important; }
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    [data-testid="stMetric"] { padding: 12px !important; }
+    [data-testid="stMetricValue"] { font-size: 20px !important; }
+    .stButton > button { padding: 8px 16px !important; font-size: 12px !important; }
+    .stTabs [data-baseweb="tab"] { padding: 8px 12px !important; font-size: 12px !important; }
+    section[data-testid="stSidebar"] { width: 240px !important; }
+    [data-testid="stForm"] { padding: 16px !important; }
+    [data-testid="column"] { padding: 0 4px !important; }
+    .mobile-hide { display: none !important; }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 1.3rem !important; }
+    h2 { font-size: 1.1rem !important; }
+    .stTabs [data-baseweb="tab"] { padding: 6px 8px !important; font-size: 11px !important; }
+}
+
+/* ===== CAPTION ===== */
+.stCaption, [data-testid="stCaption"] { color: #444 !important; font-size: 11px !important; }
+
+/* ===== SLIDER ===== */
+.stSlider [data-baseweb="slider"] [role="slider"] {
+    background: #fff !important;
+    border-color: #fff !important;
+}
+
+/* ===== TOOLTIP ===== */
+[data-testid="stTooltipIcon"] { color: #444 !important; }
+
+/* ===== CHECKBOX ===== */
+.stCheckbox label span { color: #ccc !important; }
+</style>
+""", unsafe_allow_html=True)
+
+
+# ==================== LOGIN CHECK ====================
+if 'logged_in' not in st.session_state or not st.session_state.logged_in:
+    login.login()
+    st.stop()
+
+if not login.verify_session():
+    st.warning("Session expired. Please login again.")
+    login.login()
+    st.stop()
+
+
+# ==================== SIDEBAR ====================
+st.sidebar.markdown("""
+<div style="padding:10px 0 16px 0; border-bottom:1px solid #1a1a1a; margin-bottom:12px;">
+    <p style="margin:0; color:#fff; font-size:18px; font-weight:800; letter-spacing:-0.5px;">
+        💊 Smart Pharmacy
+    </p>
+    <p style="margin:2px 0 0 0; color:#444; font-size:11px; letter-spacing:1px; text-transform:uppercase;">
+        AI Platform
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown(f"""
+<div style="background:#111; border:1px solid #1a1a1a; border-radius:8px;
+            padding:10px 14px; margin-bottom:12px;">
+    <p style="margin:0; color:#555; font-size:10px; text-transform:uppercase; letter-spacing:1px;">
+        Signed in as
+    </p>
+    <p style="margin:3px 0 0 0; color:#fff; font-weight:600; font-size:14px;">
+        {st.session_state.username}
+    </p>
+    <p style="margin:2px 0 0 0; color:#666; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">
+        {st.session_state.role}
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+role = st.session_state.role
+menu_options = login.get_menu_options(role)
+
+menu = st.sidebar.radio("", menu_options, label_visibility="collapsed")
+
+st.sidebar.markdown("---")
+if st.sidebar.button("Logout", use_container_width=True):
+    login.logout()
+    st.rerun()
+
+st.sidebar.markdown("""
+<p style="color:#333; font-size:10px; text-align:center; margin-top:20px;">
+    v2.0 · MongoDB · JWT
+</p>
+""", unsafe_allow_html=True)
+
+
+# ==================== PAGE ROUTING ====================
+def show_pdf_generator():
+    st.title("📄 PDF Generator")
+    from modules.utils.db import get_all_prescriptions
+    prescriptions = get_all_prescriptions()
+    if not prescriptions:
+        st.info("No prescriptions yet.")
+        return
+
+    options = [f"{p.get('prescription_id','')}: {p.get('patient_name','')}" for p in prescriptions]
+    idx = st.selectbox("Select Prescription", range(len(options)), format_func=lambda x: options[x])
+
+    if idx is not None:
+        selected = prescriptions[idx]
+        if st.button("Generate PDF"):
+            with st.spinner("Generating..."):
+                data = {
+                    "Patient": selected.get("patient_name", ""),
+                    "Doctor": selected.get("doctor_name", ""),
+                    "Medicines": selected.get("medicines", ""),
+                    "Caregiver": selected.get("caregiver", ""),
+                    "Age": selected.get("age", ""),
+                    "Instructions": selected.get("dosage", ""),
+                }
+                pdf = pdf_generator.generate_prescription_pdf(data)
+                if pdf:
+                    import os
+                    from datetime import datetime
+                    fn = f"rx_{selected.get('prescription_id','')}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                    fp = os.path.join("data", fn)
+                    os.makedirs("data", exist_ok=True)
+                    pdf.output(fp)
+                    st.success("PDF generated")
+                    with open(fp, "rb") as f:
+                        st.download_button("Download PDF", f.read(), fn, "application/pdf")
+
+
+if menu == "🏥 Dashboard": dashboard.show()
+elif menu == "👨‍⚕️ Doctor Module": doctor.show()
+elif menu == "👨‍👩‍👦 Caregiver Dashboard": show_caregiver()
+elif menu == "💊 Pharmacy Verification": pharmacy.show()
+elif menu == "👤 Patient Management": patients.show()
+elif menu == "📦 Orders": orders.show()
+elif menu == "🧑‍💻 Admin Panel": admin.show()
+elif menu == "🤖 AI Prediction": ai_prediction.show()
+elif menu == "🚨 Alerts": alerts.show_alerts()
+elif menu == "📄 PDF Generator": show_pdf_generator()

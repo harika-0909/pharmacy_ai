@@ -1,0 +1,15 @@
+streamlit
+pandas
+qrcode[pil]
+scikit-learn
+plotly
+python-dotenv
+fpdf
+pymongo
+cloudinary
+PyJWT
+bcrypt
+Pillow
+opencv-python-headless
+numpy
+fpdf

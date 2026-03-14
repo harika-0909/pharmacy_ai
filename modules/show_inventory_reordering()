@@ -1,0 +1,45 @@
+def show_inventory_reordering(df, inventory_df):
+
+    st.header("Smart Inventory Reordering AI")
+
+    # normalize columns
+    df.columns = df.columns.str.lower()
+    inventory_df.columns = inventory_df.columns.str.lower()
+
+    if "medicines" not in df.columns:
+        st.error("Medicines column missing in prescriptions")
+        return
+
+    meds = df["medicines"].str.split(",").explode().str.strip()
+
+    usage_counts = meds.value_counts()
+
+    inventory_df["current_usage"] = inventory_df["medicine"].map(usage_counts).fillna(0)
+
+    def reorder(row):
+
+        if row["stock"] <= row["reorder_level"]:
+            return "Urgent Reorder"
+
+        elif row["stock"] <= row["reorder_level"] * 1.5:
+            return "Reorder Soon"
+
+        elif row["current_usage"] > row["stock"] * 0.1:
+            return "Monitor"
+
+        else:
+            return "Stock OK"
+
+    inventory_df["reorder_status"] = inventory_df.apply(reorder, axis=1)
+
+    st.subheader("Inventory Status")
+
+    st.bar_chart(inventory_df["reorder_status"].value_counts())
+
+    st.subheader("Medicines Needing Attention")
+
+    reorder_items = inventory_df[
+        inventory_df["reorder_status"] != "Stock OK"
+    ][["medicine","stock","reorder_level","reorder_status"]]
+
+    st.dataframe(reorder_items)
