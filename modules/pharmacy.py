@@ -397,86 +397,96 @@ def show_orders():
 
     username = st.session_state.get("username","pharmacy")
 
+    # Order selector — no expander = no icon overlap
+    status_icons = {"pending":"🟡","processing":"🔵","dispensed":"🟣","completed":"🟢","cancelled":"🔴"}
+    options = []
     for order in orders:
-        status   = order.get("status","pending")
+        status = order.get("status","pending")
+        presc_id = order.get("prescription_id","")
+        patient = order.get("patient_name","")
+        created = order.get("created_at")
+        age_h = f" · {round((datetime.utcnow()-created).total_seconds()/3600,1)}h old" if created else ""
+        icon = status_icons.get(status,"⚪")
+        options.append((f"{icon} {presc_id} · {patient} · {status.upper()}{age_h}", order))
+
+    st.markdown("**Select order to view & manage:**")
+    selected_label = st.selectbox("", options=[o[0] for o in options], key="ph_order_select", label_visibility="collapsed")
+
+    if selected_label:
+        idx = next(i for i, (lbl, _) in enumerate(options) if lbl == selected_label)
+        order = options[idx][1]
+        status = order.get("status","pending")
         order_id = str(order.get("_id",""))
         presc_id = order.get("prescription_id","")
-        patient  = order.get("patient_name","")
-        doctor   = order.get("doctor_name","")
-        age_h    = ""
-        created  = order.get("created_at")
-        if created:
-            diff = (datetime.utcnow()-created).total_seconds()/3600
-            age_h = f" · {round(diff,1)}h old"
+        patient = order.get("patient_name","")
+        doctor = order.get("doctor_name","")
+        created = order.get("created_at")
 
-        label = f"{presc_id}  ·  {patient}  ·  {status.upper()}{age_h}"
+        # Status pill
+        st.markdown(_pill(status), unsafe_allow_html=True)
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-        with st.expander(label):
-            # Status pill
-            st.markdown(_pill(status), unsafe_allow_html=True)
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**Patient:** {patient}")
+            st.markdown(f"**Doctor:** {doctor}")
+            st.markdown(f"**Treatment:** {order.get('treatment_type','—')}")
+            st.markdown(f"**Created:** {str(created)[:16] if created else '—'}")
+        with col2:
+            st.markdown(f"**Medicines:** {order.get('medicines','—')}")
+            st.markdown(f"**Dosage:** {order.get('dosage','—')}")
+            if order.get("updated_by"):
+                st.markdown(f"**Last updated by:** {order['updated_by']}")
+            if order.get("pharmacy_notes"):
+                st.info(f"📝 {order['pharmacy_notes']}")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(f"**Patient:** {patient}")
-                st.markdown(f"**Doctor:** {doctor}")
-                st.markdown(f"**Treatment:** {order.get('treatment_type','—')}")
-                st.markdown(f"**Created:** {str(created)[:16] if created else '—'}")
-            with col2:
-                st.markdown(f"**Medicines:** {order.get('medicines','—')}")
-                st.markdown(f"**Dosage:** {order.get('dosage','—')}")
-                if order.get("updated_by"):
-                    st.markdown(f"**Last updated by:** {order['updated_by']}")
-                if order.get("pharmacy_notes"):
-                    st.info(f"📝 {order['pharmacy_notes']}")
+        # Order timeline
+        stages = ["pending","processing","dispensed","completed"]
+        labels = {"pending":"⏳ Pending","processing":"⚙️ Processing",
+                  "dispensed":"📦 Dispensed","completed":"✅ Done"}
+        def _ts(s):
+            if status not in stages: return ""
+            i_cur = stages.index(status)
+            i_s = stages.index(s)
+            if i_s < i_cur: return "ts-done"
+            if i_s == i_cur: return "ts-current"
+            return ""
+        steps = "".join(f'<div class="timeline-step {_ts(s)}">{labels[s]}</div>' for s in stages)
+        st.markdown(f'<div class="timeline">{steps}</div>', unsafe_allow_html=True)
 
-            # Order timeline
-            stages = ["pending","processing","dispensed","completed"]
-            labels = {"pending":"⏳ Pending","processing":"⚙️ Processing",
-                      "dispensed":"📦 Dispensed","completed":"✅ Done"}
-            def _ts(s):
-                if status not in stages: return ""
-                i_cur = stages.index(status)
-                i_s   = stages.index(s)
-                if i_s < i_cur:  return "ts-done"
-                if i_s == i_cur: return "ts-current"
-                return ""
-            steps = "".join(f'<div class="timeline-step {_ts(s)}">{labels[s]}</div>' for s in stages)
-            st.markdown(f'<div class="timeline">{steps}</div>', unsafe_allow_html=True)
+        st.markdown("---")
 
-            st.markdown("---")
+        # Edit fields
+        curr_notes = order.get("pharmacy_notes","")
+        curr_meds = order.get("medicines","")
+        notes = st.text_area("Notes", value=curr_notes, key=f"n_{order_id}", height=68)
+        edited_m = st.text_input("Edit Medicines", value=curr_meds, key=f"m_{order_id}")
 
-            # Edit fields
-            curr_notes = order.get("pharmacy_notes","")
-            curr_meds  = order.get("medicines","")
-            notes     = st.text_area("Notes", value=curr_notes, key=f"n_{order_id}", height=68)
-            edited_m  = st.text_input("Edit Medicines", value=curr_meds, key=f"m_{order_id}")
-
-            c1,c2,c3,c4,c5 = st.columns(5)
-            with c1:
-                if status=="pending" and st.button("▶ Process", key=f"p_{order_id}"):
-                    update_order_status(presc_id,"processing",username)
-                    _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
-                    st.rerun()
-            with c2:
-                if status in ("pending","processing") and st.button("📦 Dispense", key=f"d_{order_id}"):
-                    update_order_status(presc_id,"dispensed",username)
-                    _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
-                    st.rerun()
-            with c3:
-                if status!="completed" and st.button("✅ Complete", key=f"c_{order_id}"):
-                    update_order_status(presc_id,"completed",username)
-                    _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
-                    st.rerun()
-            with c4:
-                if status not in ("completed","cancelled") and st.button("❌ Cancel", key=f"x_{order_id}"):
-                    update_order_status(presc_id,"cancelled",username)
-                    st.rerun()
-            with c5:
-                if st.button("💾 Save", key=f"s_{order_id}"):
-                    _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
-                    st.success("Saved")
-                    st.rerun()
+        c1,c2,c3,c4,c5 = st.columns(5)
+        with c1:
+            if status=="pending" and st.button("▶ Process", key=f"p_{order_id}"):
+                update_order_status(presc_id,"processing",username)
+                _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
+                st.rerun()
+        with c2:
+            if status in ("pending","processing") and st.button("📦 Dispense", key=f"d_{order_id}"):
+                update_order_status(presc_id,"dispensed",username)
+                _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
+                st.rerun()
+        with c3:
+            if status!="completed" and st.button("✅ Complete", key=f"c_{order_id}"):
+                update_order_status(presc_id,"completed",username)
+                _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
+                st.rerun()
+        with c4:
+            if status not in ("completed","cancelled") and st.button("❌ Cancel", key=f"x_{order_id}"):
+                update_order_status(presc_id,"cancelled",username)
+                st.rerun()
+        with c5:
+            if st.button("💾 Save", key=f"s_{order_id}"):
+                _save_changes(order_id,notes,curr_notes,edited_m,curr_meds)
+                st.success("Saved")
+                st.rerun()
 
 
 def _save_changes(order_id, notes, old_notes, meds, old_meds):

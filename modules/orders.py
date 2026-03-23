@@ -62,56 +62,84 @@ def show():
     st.dataframe(pd.DataFrame(table_data), use_container_width=True)
 
     st.divider()
+
+    # Order Details — select-based UI (no expander = no icon overlap)
     st.markdown("""
-    <div style="margin-bottom: 16px; padding: 10px 0 6px 0; border-bottom: 1px solid #1a1a1a;">
+    <div style="margin-bottom: 12px; padding: 10px 0 6px 0; border-bottom: 1px solid #1a1a1a;">
         <span style="color:#888; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Order Details</span>
     </div>
     """, unsafe_allow_html=True)
 
+    status_icons = {"pending": "🟡", "processing": "🔵", "dispensed": "🟣", "completed": "🟢", "cancelled": "🔴"}
+    options = []
     for order in orders:
+        status = order.get("status", "pending")
+        presc_id = order.get("prescription_id", "")
+        patient = order.get("patient_name", "")
+        icon = status_icons.get(status, "⚪")
+        options.append((f"{icon} {presc_id} · {patient} · {status.upper()}", order))
+
+    selected_label = st.selectbox(
+        "Select an order to view details",
+        options=[o[0] for o in options],
+        key="order_detail_select",
+        label_visibility="collapsed"
+    )
+
+    if selected_label:
+        idx = next(i for i, (lbl, _) in enumerate(options) if lbl == selected_label)
+        order = options[idx][1]
         order_id = str(order.get("_id", ""))
         status = order.get("status", "pending")
         presc_id = order.get("prescription_id", "")
         patient = order.get("patient_name", "")
 
-        label = f"{presc_id}  ·  {patient}  ·  {status.upper()}"
+        # Detail card
+        st.markdown(f"""
+        <div style="background:#0d0d0d; border:1px solid #1e1e1e; border-radius:10px; padding:20px; margin-top:12px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px;">
+                <div>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Prescription</p>
+                    <p style="color:#fff;font-weight:600;margin:0;">{presc_id}</p>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Patient</p>
+                    <p style="color:#e0e0e0;margin:0;">{patient}</p>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Doctor</p>
+                    <p style="color:#e0e0e0;margin:0;">{order.get('doctor_name', '—')}</p>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Treatment</p>
+                    <p style="color:#e0e0e0;margin:0;">{order.get('treatment_type', '—')}</p>
+                </div>
+                <div>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Medicines</p>
+                    <p style="color:#e0e0e0;margin:0;">{order.get('medicines', '—')}</p>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Dosage</p>
+                    <p style="color:#e0e0e0;margin:0;">{order.get('dosage', '—')}</p>
+                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Status · Created</p>
+                    <p style="color:#e0e0e0;margin:0;">{status.upper()} · {str(order.get('created_at', ''))[:16]}</p>
+                    {('<p style="color:#555;font-size:11px;margin-top:8px;">Updated by: ' + str(order.get('updated_by', '')) + '</p>') if order.get('updated_by') else ''}
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        with st.expander(label):
-            col1, col2 = st.columns(2)
+        if order.get("pharmacy_notes"):
+            st.info(f"Notes: {order['pharmacy_notes']}")
 
-            with col1:
-                st.write(f"**Prescription:** {presc_id}")
-                st.write(f"**Patient:** {patient}")
-                st.write(f"**Doctor:** {order.get('doctor_name', '')}")
-                st.write(f"**Treatment:** {order.get('treatment_type', '')}")
-
-            with col2:
-                st.write(f"**Medicines:** {order.get('medicines', '')}")
-                st.write(f"**Dosage:** {order.get('dosage', '')}")
-                st.write(f"**Status:** {status.upper()}")
-                st.write(f"**Created:** {str(order.get('created_at', ''))[:16]}")
-                if order.get("updated_by"):
-                    st.write(f"**Updated by:** {order.get('updated_by')}")
-
-            if order.get("pharmacy_notes"):
-                st.info(f"Notes: {order['pharmacy_notes']}")
-
-            if role in ["pharmacy", "admin"]:
-                st.markdown("---")
-                c1, c2, c3, c4 = st.columns(4)
-                with c1:
-                    if st.button("Processing", key=f"op_{order_id}"):
-                        update_order_status(presc_id, "processing", username)
-                        st.rerun()
-                with c2:
-                    if st.button("Dispensed", key=f"od_{order_id}"):
-                        update_order_status(presc_id, "dispensed", username)
-                        st.rerun()
-                with c3:
-                    if st.button("Complete", key=f"oc_{order_id}"):
-                        update_order_status(presc_id, "completed", username)
-                        st.rerun()
-                with c4:
-                    if st.button("Cancel", key=f"ox_{order_id}"):
-                        update_order_status(presc_id, "cancelled", username)
-                        st.rerun()
+        if role in ["pharmacy", "admin"]:
+            st.markdown("---")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                if st.button("Processing", key=f"op_{order_id}"):
+                    update_order_status(presc_id, "processing", username)
+                    st.rerun()
+            with c2:
+                if st.button("Dispensed", key=f"od_{order_id}"):
+                    update_order_status(presc_id, "dispensed", username)
+                    st.rerun()
+            with c3:
+                if st.button("Complete", key=f"oc_{order_id}"):
+                    update_order_status(presc_id, "completed", username)
+                    st.rerun()
+            with c4:
+                if st.button("Cancel", key=f"ox_{order_id}"):
+                    update_order_status(presc_id, "cancelled", username)
+                    st.rerun()

@@ -73,11 +73,11 @@ h6 { color: #888 !important; margin-top: 0.8rem !important; }
 p, span {
     color: #e0e0e0 !important;
 }
-/* Expander header — flex layout, NO overflow/nowrap so arrow never clips label */
+/* Expander header — flex layout, prevent arrow/label overlap */
 .streamlit-expanderHeader, [data-testid="stExpanderHeader"] {
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 12px !important;
     padding: 10px 14px !important;
     margin-top: 6px !important;
     background: #0d0d0d !important;
@@ -91,20 +91,56 @@ p, span {
     overflow: visible !important;
     word-break: break-word !important;
 }
-/* Arrow icon — shrink 0 so it never gets pushed into text */
+/* Arrow icon — fixed width, right-aligned; replace Material ligature with clean chevron */
 [data-testid="stExpanderToggleIcon"],
-.streamlit-expanderHeader svg {
+[data-testid="stExpanderHeader"] [data-testid="stExpanderToggleIcon"],
+.streamlit-expanderHeader [data-testid="stExpanderToggleIcon"] {
     flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    min-width: 24px !important;
+    width: 24px !important;
     margin-left: auto !important;
+    order: 2 !important;
+    font-family: 'Inter', sans-serif !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
-/* Expander label text — takes remaining space, never truncated */
+/* Hide ALL content inside toggle — Material ligature (_arrow_right etc) bleeds as text */
+[data-testid="stExpanderToggleIcon"] * {
+    display: none !important;
+    font-size: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+[data-testid="stExpanderToggleIcon"] {
+    font-size: 0 !important; /* Hide any direct text/ligature */
+    color: transparent !important;
+    overflow: hidden !important;
+}
+/* Chevron: ▶ collapsed, ▼ expanded — shown via ::before */
+[data-testid="stExpanderToggleIcon"]::before {
+    content: "▶" !important;
+    font-size: 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    color: #999 !important;
+    line-height: 1 !important;
+    display: block !important;
+}
+[data-testid="stExpanderHeader"][aria-expanded="true"] [data-testid="stExpanderToggleIcon"]::before {
+    content: "▼" !important;
+}
+/* Expander label — takes remaining space, never overlaps icon */
 [data-testid="stExpanderHeader"] p,
 .streamlit-expanderHeader p {
-    flex: 1 !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
     margin: 0 !important;
     overflow: visible !important;
     white-space: normal !important;
-    text-overflow: unset !important;
+    order: 1 !important;
 }
 a { color: #999 !important; }
 
@@ -142,9 +178,12 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked
 }
 
 /* ===== BUTTONS ===== */
-.stButton > button {
+.stButton > button,
+.stButton > button p,
+.stButton > button span,
+.stButton > button label {
     background: #fff !important;
-    color: #000 !important;
+    color: #111 !important;
     border: none !important;
     border-radius: 8px !important;
     padding: 10px 20px !important;
@@ -153,9 +192,20 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked
     letter-spacing: 0.3px;
     transition: all 0.2s ease !important;
 }
+.stButton > button p,
+.stButton > button span,
+.stButton > button label {
+    padding: 0 !important;
+    margin: 0 !important;
+}
 .stButton > button:hover {
     background: #e0e0e0 !important;
     transform: translateY(-1px);
+}
+.stButton > button:hover p,
+.stButton > button:hover span,
+.stButton > button:hover label {
+    color: #111 !important;
 }
 .stButton > button:active {
     transform: translateY(0) !important;
@@ -392,8 +442,11 @@ section[data-testid="stSidebar"] > div:first-child > div:first-child > button {
     height: 0 !important;
     min-height: 0 !important;
 }
-/* Prevent any Material Icons font from rendering literal ligature strings */
-.material-icons, .material-symbols-outlined, .material-symbols-rounded {
+/* Prevent Material Icons from rendering literal ligature strings — SIDEBAR ONLY
+   (expander toggle in main content uses same font; must NOT be hidden) */
+section[data-testid="stSidebar"] .material-icons,
+section[data-testid="stSidebar"] .material-symbols-outlined,
+section[data-testid="stSidebar"] .material-symbols-rounded {
     font-size: 0 !important;
     color: transparent !important;
 }
