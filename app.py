@@ -25,8 +25,14 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ===== GLOBAL ===== */
-html, body, p, span, div, label, input, textarea, select, button, a,
+html, body, p, span, input, textarea, select, button, a,
 h1, h2, h3, h4, h5, h6, li, td, th, caption {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+/* Apply Inter only to Streamlit's own text elements, not internal layout divs */
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stText"] *,
+.stAlert p, .stSuccess p, .stError p, .stWarning p, .stInfo p {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
@@ -60,8 +66,31 @@ h3 {
     font-weight: 600 !important;
     font-size: 1.15rem !important;
 }
-h4, h5, h6, p, span, div, label {
+h4 { color: #e0e0e0 !important; margin-top: 1rem !important; }
+h5 { color: #aaa !important; font-size: 0.85rem !important; font-weight: 600 !important;
+     letter-spacing: 0.5px !important; margin-top: 1.2rem !important; margin-bottom: 0.5rem !important; }
+h6 { color: #888 !important; margin-top: 0.8rem !important; }
+p, span {
     color: #e0e0e0 !important;
+}
+/* Expander header — isolated so it never overlaps adjacent headings */
+.streamlit-expanderHeader, [data-testid="stExpanderHeader"] {
+    position: relative !important;
+    z-index: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px 14px !important;
+    margin-top: 6px !important;
+    background: #0d0d0d !important;
+    border: 1px solid #1e1e1e !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #ddd !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 a { color: #999 !important; }
 
@@ -379,6 +408,29 @@ role = st.session_state.role
 menu_options = login.get_menu_options(role)
 
 menu = st.sidebar.radio("", menu_options, label_visibility="collapsed")
+
+# ── Live alert count badge ──
+try:
+    from modules.alerts import get_low_stock_alerts, get_missed_dose_alerts, seed_inventory
+    from modules.alerts import INVENTORY as _INV
+    seed_inventory(_INV)
+    _n_crit = len([a for a in get_low_stock_alerts() if a["severity"] == "critical"])
+    _n_miss = len(get_missed_dose_alerts())
+    _total_alerts = _n_crit + _n_miss
+    if _total_alerts > 0:
+        st.sidebar.markdown(f"""
+<div style="background:#1a0000;border:1px solid #ff2d2d40;border-radius:8px;
+            padding:10px 14px;margin-top:4px;margin-bottom:4px;display:flex;
+            align-items:center;gap:10px;">
+    <span style="font-size:18px;">🚨</span>
+    <div>
+        <p style="margin:0;color:#ff2d2d;font-weight:700;font-size:13px;">{_total_alerts} Active Alerts</p>
+        <p style="margin:0;color:#555;font-size:11px;">{_n_crit} critical · {_n_miss} missed doses</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+except Exception:
+    pass
 
 st.sidebar.markdown("---")
 if st.sidebar.button("Logout", use_container_width=True):

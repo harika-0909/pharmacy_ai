@@ -6,6 +6,7 @@ import json
 
 from modules.utils.qr_scanner import scan_qr
 from modules.utils.db import get_prescriptions_by_caregiver, get_prescription_by_id
+from modules.alerts import show_caregiver_alerts
 
 
 def show():
@@ -15,12 +16,15 @@ def show():
 
     st.info(f"🔐 **Welcome {current_caregiver}** — You can view prescriptions assigned to you.")
 
-    tab1, tab2 = st.tabs(["📋 My Prescriptions", "📱 Scan QR Code"])
+    tab1, tab2, tab3 = st.tabs(["🚨 Alerts & Reminders", "📋 My Prescriptions", "📱 Scan QR Code"])
 
     with tab1:
-        show_my_prescriptions(current_caregiver)
+        show_caregiver_alerts(current_caregiver)
 
     with tab2:
+        show_my_prescriptions(current_caregiver)
+
+    with tab3:
         show_qr_scanner(current_caregiver)
 
 

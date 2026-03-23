@@ -382,6 +382,118 @@ def get_low_stock_items(threshold=15):
     return list(inventory.find({"stock": {"$lte": threshold}}))
 
 
+# ==================== ALERT LOG ====================
+
+def log_alert(alert_type: str, message: str, severity: str, meta: dict = None):
+    """Persist an alert occurrence to the alert_log collection."""
+    col = get_collection("alert_log")
+    col.insert_one({
+        "type":       alert_type,
+        "message":    message,
+        "severity":   severity,
+        "meta":       meta or {},
+        "acknowledged": False,
+        "ack_by":     None,
+        "ack_at":     None,
+        "created_at": datetime.utcnow(),
+    })
+
+
+def get_alert_log(limit: int = 100, only_unacked: bool = False):
+    """Fetch recent alert log entries."""
+    col = get_collection("alert_log")
+    query = {"acknowledged": False} if only_unacked else {}
+    return list(col.find(query).sort("created_at", -1).limit(limit))
+
+
+def acknowledge_alert(alert_id: str, username: str):
+    """Mark an alert as acknowledged."""
+    col = get_collection("alert_log")
+    col.update_one(
+        {"_id": ObjectId(alert_id)},
+        {"$set": {"acknowledged": True, "ack_by": username, "ack_at": datetime.utcnow()}}
+    )
+
+
+def clear_acked_alerts():
+    """Remove all acknowledged alert log entries."""
+    get_collection("alert_log").delete_many({"acknowledged": True})
+
+
+# ==================== INVENTORY EXTENDED ====================
+
+def set_inventory_expiry(medicine_name: str, expiry_date):
+    """Store expiry date for an inventory item."""
+    inventory = get_collection("inventory")
+    inventory.update_one(
+        {"medicine_name": medicine_name},
+        {"$set": {"expiry_date": expiry_date, "updated_at": datetime.utcnow()}},
+        upsert=False
+    )
+
+
+def get_expiring_items(within_days: int = 90):
+    """Return inventory items expiring within N days."""
+    inventory = get_collection("inventory")
+    cutoff = datetime.utcnow().replace(tzinfo=None)
+    from datetime import timedelta
+    cutoff_future = cutoff + timedelta(days=within_days)
+    return list(inventory.find({
+        "expiry_date": {
+            "$exists": True,
+            "$lte": cutoff_future,
+            "$gte": cutoff
+        }
+    }))
+
+
+def restock_item(medicine_name: str, add_units: int, restocked_by: str = "system"):
+    """Add units to existing stock and log the event."""
+    inventory = get_collection("inventory")
+    item = inventory.find_one({"medicine_name": medicine_name})
+    if not item:
+        return False
+    new_stock = item.get("stock", 0) + add_units
+    inventory.update_one(
+        {"medicine_name": medicine_name},
+        {"$set": {
+            "stock": new_stock,
+            "last_restocked_at": datetime.utcnow(),
+            "last_restocked_by": restocked_by,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+    log_alert("restock", f"{medicine_name} restocked +{add_units} units (now {new_stock})", "info",
+              {"medicine": medicine_name, "units_added": add_units, "restocked_by": restocked_by})
+    return True
+
+
+# ==================== DOSE SCHEDULES ====================
+
+def save_dose_schedule(caregiver: str, patient: str, medicine: str, times: list):
+    """Store a custom dose schedule for a caregiver/patient/medicine."""
+    col = get_collection("dose_schedules")
+    col.update_one(
+        {"caregiver": caregiver, "patient": patient, "medicine": medicine},
+        {"$set": {
+            "times": times,
+            "updated_at": datetime.utcnow()
+        }},
+        upsert=True
+    )
+
+
+def get_dose_schedules(caregiver: str):
+    """Get all dose schedules for a caregiver."""
+    col = get_collection("dose_schedules")
+    return list(col.find({"caregiver": caregiver}))
+
+
+def get_all_dose_schedules():
+    """Get every dose schedule (admin view)."""
+    return list(get_collection("dose_schedules").find({}).sort("updated_at", -1))
+
+
 # ==================== SEED DATA ====================
 
 def seed_default_data():

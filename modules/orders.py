@@ -62,7 +62,11 @@ def show():
     st.dataframe(pd.DataFrame(table_data), use_container_width=True)
 
     st.divider()
-    st.markdown("##### Details")
+    st.markdown("""
+    <div style="margin-bottom: 16px; padding: 10px 0 6px 0; border-bottom: 1px solid #1a1a1a;">
+        <span style="color:#888; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Order Details</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     for order in orders:
         order_id = str(order.get("_id", ""))
@@ -70,7 +74,8 @@ def show():
         presc_id = order.get("prescription_id", "")
         patient = order.get("patient_name", "")
 
-        label = f"{presc_id}  |  {patient}  |  {status.upper()}"
+        status_badge = {"pending": "🟡", "processing": "🔵", "dispensed": "🟣", "completed": "🟢", "cancelled": "🔴"}.get(status, "⚪")
+        label = f"{status_badge}  {presc_id}   ·   {patient}   ·   {status.upper()}"
 
         with st.expander(label):
             col1, col2 = st.columns(2)

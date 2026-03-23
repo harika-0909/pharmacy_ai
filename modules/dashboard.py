@@ -14,6 +14,13 @@ from modules.utils.db import (
 def show():
     st.title("Dashboard")
 
+    # Live alert widget (non-blocking — wrapped in try)
+    try:
+        from modules.alerts import show_dashboard_widget
+        show_dashboard_widget()
+    except Exception:
+        pass
+
     prescriptions = get_all_prescriptions()
     orders = get_all_orders()
     patients = get_all_patients()

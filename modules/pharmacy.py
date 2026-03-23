@@ -12,19 +12,23 @@ from modules.utils.db import (
     get_order_by_prescription, get_inventory,
     update_order
 )
+from modules.alerts import show_pharmacy_alerts
 
 
 def show():
     st.title("💊 Pharmacy")
 
-    tab1, tab2, tab3 = st.tabs(["Verify", "Orders", "Inventory"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🚨 Alerts", "Verify", "Orders", "Inventory"])
 
     with tab1:
-        show_verification()
+        show_pharmacy_alerts()
     with tab2:
-        show_orders()
+        show_verification()
     with tab3:
+        show_orders()
+    with tab4:
         show_inventory()
+
 
 
 def show_verification():
@@ -87,8 +91,13 @@ def show_orders():
     for order in orders:
         status = order.get("status", "pending")
         order_id = str(order.get("_id", ""))
+        presc_id = order.get("prescription_id", "")
+        patient_nm = order.get("patient_name", "")
 
-        with st.expander(f"{order.get('prescription_id', '')} · {order.get('patient_name', '')} · {status.upper()}"):
+        status_badge = {"pending": "🟡", "processing": "🔵", "dispensed": "🟣", "completed": "🟢", "cancelled": "🔴"}.get(status, "⚪")
+        label = f"{status_badge}  {presc_id}   ·   {patient_nm}   ·   {status.upper()}"
+
+        with st.expander(label):
             col1, col2 = st.columns(2)
             with col1:
                 st.write(f"**Patient:** {order.get('patient_name', '')}")
