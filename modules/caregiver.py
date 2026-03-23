@@ -59,7 +59,7 @@ def show_my_prescriptions(caregiver_name):
         doctor = presc.get("doctor_name", "Unknown")
         medicines = presc.get("medicines", "N/A")
 
-        with st.expander(f"🧾 {presc_id} — Patient: {patient}"):
+        with st.expander(f"{presc_id}  —  Patient: {patient}"):
             col1, col2 = st.columns(2)
 
             with col1:

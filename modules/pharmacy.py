@@ -556,9 +556,9 @@ def show_inventory_enhanced():
             stock = i.get("stock",0)
             pct   = min(stock/100*100, 100)
             bar_c = "#ff2d2d" if stock<=5 else ("#ffaa00" if stock<=15 else "#00cc44")
-            status_cls = "🔴" if stock<=5 else ("🟡" if stock<=15 else "🟢")
+            status_cls = "Critical" if stock<=5 else ("Low" if stock<=15 else "OK")
 
-            with st.expander(f"{status_cls} {name}  ·  {stock} units"):
+            with st.expander(f"{name}  ·  {stock} units  ·  {status_cls}"):
                 col1,col2 = st.columns([3,1])
                 with col1:
                     st.markdown(f"""

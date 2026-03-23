@@ -500,7 +500,7 @@ def _tab_patient_lookup():
         active = [m for m in p.get("medications",[]) if m.get("status")=="active"]
         presc  = get_prescriptions_by_patient(name) if True else []
 
-        with st.expander(f"👤 {name}  ·  Age {age}  ·  {len(active)} active meds"):
+        with st.expander(f"{name}  ·  Age {age}  ·  {len(active)} active meds"):
             col1,col2 = st.columns(2)
 
             with col1:

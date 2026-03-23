@@ -172,8 +172,7 @@ def show_all():
         inactive = [m for m in meds if m.get("status")!="active"]
 
         blood_html = f'<span class="blood-badge">{blood}</span>' if blood else ""
-        label = f"👤 {name}  ·  Age {age}  ·  {len(active)} active med{'s' if len(active)!=1 else ''}"
-
+        label = f"{name}  ·  Age {age}  ·  {len(active)} active med{'s' if len(active)!=1 else ''}"
         with st.expander(label):
             # Header
             st.markdown(f"""

@@ -73,12 +73,11 @@ h6 { color: #888 !important; margin-top: 0.8rem !important; }
 p, span {
     color: #e0e0e0 !important;
 }
-/* Expander header — isolated so it never overlaps adjacent headings */
+/* Expander header — flex layout, NO overflow/nowrap so arrow never clips label */
 .streamlit-expanderHeader, [data-testid="stExpanderHeader"] {
-    position: relative !important;
-    z-index: 1 !important;
     display: flex !important;
     align-items: center !important;
+    gap: 8px !important;
     padding: 10px 14px !important;
     margin-top: 6px !important;
     background: #0d0d0d !important;
@@ -87,10 +86,25 @@ p, span {
     font-size: 13px !important;
     font-weight: 500 !important;
     color: #ddd !important;
-    line-height: 1.4 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    word-break: break-word !important;
+}
+/* Arrow icon — shrink 0 so it never gets pushed into text */
+[data-testid="stExpanderToggleIcon"],
+.streamlit-expanderHeader svg {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+/* Expander label text — takes remaining space, never truncated */
+[data-testid="stExpanderHeader"] p,
+.streamlit-expanderHeader p {
+    flex: 1 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: unset !important;
 }
 a { color: #999 !important; }
 
@@ -251,16 +265,12 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked
     letter-spacing: 0.5px !important;
 }
 
-/* ===== EXPANDER ===== */
+/* ===== EXPANDER wrapper ===== */
 [data-testid="stExpander"] {
     background: #0a0a0a !important;
     border: 1px solid #1a1a1a !important;
     border-radius: 10px !important;
-}
-.streamlit-expanderHeader {
-    color: #ddd !important;
-    font-weight: 500 !important;
-    font-size: 14px !important;
+    overflow: visible !important;
 }
 
 /* ===== DATAFRAME ===== */

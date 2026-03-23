@@ -74,8 +74,7 @@ def show():
         presc_id = order.get("prescription_id", "")
         patient = order.get("patient_name", "")
 
-        status_badge = {"pending": "🟡", "processing": "🔵", "dispensed": "🟣", "completed": "🟢", "cancelled": "🔴"}.get(status, "⚪")
-        label = f"{status_badge}  {presc_id}   ·   {patient}   ·   {status.upper()}"
+        label = f"{presc_id}  ·  {patient}  ·  {status.upper()}"
 
         with st.expander(label):
             col1, col2 = st.columns(2)
