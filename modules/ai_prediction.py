@@ -189,7 +189,6 @@ def show_expiry_prediction(inventory_df):
         st.info("No inventory data available. Inventory will be populated when seeded.")
 
         # Generate sample data
-        from datetime import datetime, timedelta
         sample_data = []
         medicines = ["Paracetamol", "Ibuprofen", "Amoxicillin", "Aspirin", "Omeprazole",
                      "Metformin", "Lisinopril", "Simvastatin", "Warfarin", "Insulin"]
