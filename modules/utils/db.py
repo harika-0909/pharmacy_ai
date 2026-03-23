@@ -30,6 +30,24 @@ def get_collection(name):
     return get_db()[name]
 
 
+def sanitize_df(records: list) -> list:
+    """Convert ObjectId (and any other non-Arrow-compatible) values to strings.
+
+    Call this on the raw list returned by find() before passing it to
+    pd.DataFrame() so that st.dataframe() never raises ArrowInvalid.
+    """
+    clean = []
+    for doc in records:
+        row = {}
+        for k, v in doc.items():
+            if isinstance(v, ObjectId):
+                row[k] = str(v)
+            else:
+                row[k] = v
+        clean.append(row)
+    return clean
+
+
 # ==================== USERS ====================
 
 def create_user(username, password_hash, role):

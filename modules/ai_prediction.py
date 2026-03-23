@@ -8,7 +8,7 @@ import numpy as np
 import random
 from datetime import datetime, timedelta
 
-from modules.utils.db import get_all_prescriptions, get_inventory
+from modules.utils.db import get_all_prescriptions, get_inventory, sanitize_df
 
 
 def show():
@@ -21,7 +21,7 @@ def show():
         return
 
     # Convert to DataFrame
-    df = pd.DataFrame(prescriptions)
+    df = pd.DataFrame(sanitize_df(prescriptions))
 
     # Normalize column names
     if "medicines" not in df.columns and "Medicines" in df.columns:
@@ -30,7 +30,7 @@ def show():
     # Get inventory data
     inventory_items = get_inventory()
     if inventory_items:
-        inventory_df = pd.DataFrame(inventory_items)
+        inventory_df = pd.DataFrame(sanitize_df(inventory_items))
         if "medicine_name" in inventory_df.columns:
             inventory_df = inventory_df.rename(columns={"medicine_name": "medicine"})
     else:
