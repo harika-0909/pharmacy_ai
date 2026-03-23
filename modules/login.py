@@ -57,15 +57,32 @@ def login():
                             else:
                                 st.error("Invalid credentials")
 
-                with st.expander("Default Credentials"):
-                    st.markdown("""
-                    | Role | Username | Password |
-                    |------|----------|----------|
-                    | Admin | `admin` | `admin123` |
-                    | Doctor | `doctor1` | `doctor123` |
-                    | Pharmacy | `pharmacy1` | `pharmacy123` |
-                    | Caregiver | `caregiver1` | `caregiver123` |
-                    """)
+                st.markdown("""
+<div style="background:#0d0d0d; border:1px solid #1e1e1e; border-radius:10px;
+            padding:14px 18px; margin-top:8px;">
+    <p style="color:#444; font-size:10px; text-transform:uppercase; letter-spacing:1.2px;
+              margin:0 0 10px 0; font-weight:600;">Default Credentials</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div style="background:#111; border-radius:6px; padding:8px 12px;">
+            <p style="color:#555; font-size:10px; margin:0; text-transform:uppercase; letter-spacing:.5px;">Admin</p>
+            <p style="color:#fff; font-size:12px; font-weight:600; margin:2px 0 0;">admin / admin123</p>
+        </div>
+        <div style="background:#111; border-radius:6px; padding:8px 12px;">
+            <p style="color:#555; font-size:10px; margin:0; text-transform:uppercase; letter-spacing:.5px;">Doctor</p>
+            <p style="color:#fff; font-size:12px; font-weight:600; margin:2px 0 0;">doctor1 / doctor123</p>
+        </div>
+        <div style="background:#111; border-radius:6px; padding:8px 12px;">
+            <p style="color:#555; font-size:10px; margin:0; text-transform:uppercase; letter-spacing:.5px;">Pharmacy</p>
+            <p style="color:#fff; font-size:12px; font-weight:600; margin:2px 0 0;">pharmacy1 / pharmacy123</p>
+        </div>
+        <div style="background:#111; border-radius:6px; padding:8px 12px;">
+            <p style="color:#555; font-size:10px; margin:0; text-transform:uppercase; letter-spacing:.5px;">Caregiver</p>
+            <p style="color:#fff; font-size:12px; font-weight:600; margin:2px 0 0;">caregiver1 / caregiver123</p>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 
             with tab2:
                 with st.form("register_form"):
