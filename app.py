@@ -372,6 +372,31 @@ hr { border-color: #1a1a1a !important; }
 
 /* ===== CHECKBOX ===== */
 .stCheckbox label span { color: #ccc !important; }
+
+/* ===== HIDE SIDEBAR COLLAPSE BUTTON + Material Icons ligature bleed ===== */
+/* The collapse button renders its icon as a text ligature which bleeds in some browsers */
+[data-testid="collapsedControl"],
+button[kind="header"],
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+/* Suppress any stray Material Icons text rendering in the sidebar header area */
+section[data-testid="stSidebar"] > div:first-child > div:first-child > button {
+    display: none !important;
+}
+/* Hide the top bar that shows icon text */
+[data-testid="stDecoration"] { display: none !important; }
+[data-testid="stHeader"] {
+    background: transparent !important;
+    height: 0 !important;
+    min-height: 0 !important;
+}
+/* Prevent any Material Icons font from rendering literal ligature strings */
+.material-icons, .material-symbols-outlined, .material-symbols-rounded {
+    font-size: 0 !important;
+    color: transparent !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
