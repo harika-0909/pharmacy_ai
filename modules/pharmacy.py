@@ -535,7 +535,7 @@ def show_inventory_enhanced():
         display = [i for i in display if s in i.get("medicine_name","").lower()]
 
     # Table view
-    view_mode = st.radio("", ["📊 Table", "🃏 Cards"], horizontal=True,
+    view_mode = st.radio("View Mode", ["📊 Table", "🃏 Cards"], horizontal=True,
                          label_visibility="collapsed", key="inv_view_mode")
 
     if view_mode == "📊 Table":

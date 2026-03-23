@@ -442,7 +442,7 @@ st.sidebar.markdown(f"""
 role = st.session_state.role
 menu_options = login.get_menu_options(role)
 
-menu = st.sidebar.radio("", menu_options, label_visibility="collapsed")
+menu = st.sidebar.radio("Navigation", menu_options, label_visibility="collapsed")
 
 # ── Live alert count badge ──
 try:

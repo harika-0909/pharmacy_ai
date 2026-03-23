@@ -133,7 +133,7 @@ def show_all():
         med_filter = st.selectbox("Filter by medication", ["All"] + med_names,
                                   key="pat_med_filter")
     with col3:
-        view = st.radio("", ["🃏","📊"], horizontal=True, label_visibility="collapsed", key="pat_view")
+        view = st.radio("View", ["🃏","📊"], horizontal=True, label_visibility="collapsed", key="pat_view")
 
     display = patients
     if search_q:

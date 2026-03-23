@@ -1,6 +1,3 @@
-from . import doctor
-from . import pharmacy
-from . import admin
-from . import alerts
-from . import patients
-from . import orders
+# Empty init — modules are imported directly in app.py, not here.
+# Putting imports here caused circular import KeyErrors on Streamlit Cloud
+# because modules.utils.db was not yet in sys.modules when re-entered.

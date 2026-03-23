@@ -123,7 +123,7 @@ def _tab_new_prescription(medicine_names, med_lookup):
     patients     = get_all_patients()
     patient_names = [p["name"] for p in patients]
 
-    mode = st.radio("", ["Select Existing", "New Patient"], horizontal=True,
+    mode = st.radio("Patient Mode", ["Select Existing", "New Patient"], horizontal=True,
                     label_visibility="collapsed", key="doc_pat_mode")
 
     patient_age = patient_phone = ""
