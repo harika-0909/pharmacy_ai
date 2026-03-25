@@ -19,59 +19,59 @@ from modules.alerts import show_pharmacy_alerts
 # ─────────────────── CSS ───────────────────
 PHARMACY_CSS = """
 <style>
-/* Status pills */
+/* Status pills — sky-theme friendly */
 .status-pill {
     display:inline-block; padding:3px 12px; border-radius:20px;
     font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
 }
-.pill-pending    { background:#1a1000; color:#ffaa00; border:1px solid #ffaa0050; }
-.pill-processing { background:#001020; color:#00aaff; border:1px solid #00aaff50; }
-.pill-dispensed  { background:#150028; color:#cc44ff; border:1px solid #cc44ff50; }
-.pill-completed  { background:#001a05; color:#00cc44; border:1px solid #00cc4450; }
-.pill-cancelled  { background:#1a0000; color:#ff4444; border:1px solid #ff444450; }
+.pill-pending    { background:rgba(255,170,0,0.12); color:#b35c00; border:1px solid rgba(255,170,0,0.45); }
+.pill-processing { background:rgba(0,140,180,0.12); color:#0d5c7a; border:1px solid rgba(72,184,206,0.65); }
+.pill-dispensed  { background:rgba(120,60,180,0.1); color:#5c3d8a; border:1px solid rgba(120,60,180,0.35); }
+.pill-completed  { background:rgba(13,138,91,0.12); color:#0d6b47; border:1px solid rgba(13,138,91,0.4); }
+.pill-cancelled  { background:rgba(196,61,61,0.1); color:#a33; border:1px solid rgba(196,61,61,0.4); }
 
 /* Prescription card */
 .rx-card {
-    background:#0a0a0a; border:1px solid #1e1e1e; border-radius:12px;
-    padding:20px; margin-bottom:16px;
+    background:rgba(255,255,255,0.88); border:1px solid rgba(72,184,206,0.5); border-radius:12px;
+    padding:20px; margin-bottom:16px; box-shadow:0 2px 12px rgba(13,76,92,0.06);
 }
 .rx-card-header {
     display:flex; justify-content:space-between; align-items:center;
-    margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #1a1a1a;
+    margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(72,184,206,0.35);
 }
-.rx-id { font-size:18px; font-weight:800; color:#fff; letter-spacing:-0.5px; }
-.rx-field-label { color:#555; font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin:0; }
-.rx-field-value { color:#e0e0e0; font-size:14px; font-weight:500; margin:3px 0 12px; }
+.rx-id { font-size:18px; font-weight:800; color:#0a3d47; letter-spacing:-0.5px; }
+.rx-field-label { color:#2d5c6a; font-size:11px; text-transform:uppercase; letter-spacing:.5px; margin:0; }
+.rx-field-value { color:#0a3d47; font-size:14px; font-weight:500; margin:3px 0 12px; }
 
 /* QR drop zone */
 .qr-dropzone {
-    border:2px dashed #222; border-radius:12px; padding:40px 20px;
-    text-align:center; background:#050505;
+    border:2px dashed rgba(72,184,206,0.65); border-radius:12px; padding:40px 20px;
+    text-align:center; background:rgba(232,248,252,0.85);
     transition:border-color .2s;
 }
 
 /* Scan result badge */
-.scan-ok  { color:#00cc44; font-size:13px; font-weight:700; }
-.scan-err { color:#ff4444; font-size:13px; font-weight:700; }
+.scan-ok  { color:#0d8a5b; font-size:13px; font-weight:700; }
+.scan-err { color:#c43d3d; font-size:13px; font-weight:700; }
 
 /* Inventory bar */
-.inv-bar-wrap { background:#111; border-radius:4px; height:6px; margin-top:4px; }
+.inv-bar-wrap { background:rgba(197,238,246,0.8); border-radius:4px; height:6px; margin-top:4px; }
 .inv-bar      { height:6px; border-radius:4px; transition:width .3s; }
 
 /* Timeline step */
 .timeline {
     display:flex; gap:0; margin:16px 0;
-    border:1px solid #1a1a1a; border-radius:10px; overflow:hidden;
+    border:1px solid rgba(72,184,206,0.45); border-radius:10px; overflow:hidden;
 }
 .timeline-step {
     flex:1; padding:10px 8px; text-align:center; font-size:11px;
-    font-weight:600; letter-spacing:.4px; color:#333; background:#0a0a0a;
-    border-right:1px solid #1a1a1a; transition:all .2s;
+    font-weight:600; letter-spacing:.4px; color:#4a7a8a; background:rgba(255,255,255,0.55);
+    border-right:1px solid rgba(72,184,206,0.35); transition:all .2s;
 }
 .timeline-step:last-child { border-right:none; }
-.ts-active   { color:#fff !important; background:#181818 !important; }
-.ts-done     { color:#00cc44 !important; }
-.ts-current  { color:#ffaa00 !important; background:#120e00 !important; }
+.ts-active   { color:#0a3d47 !important; background:rgba(144,224,239,0.45) !important; }
+.ts-done     { color:#0d8a5b !important; }
+.ts-current  { color:#b35c00 !important; background:rgba(255,170,0,0.12) !important; }
 </style>
 """
 
@@ -87,7 +87,7 @@ def show():
     st.markdown("""
 <div style="margin-bottom:8px;">
     <h1 style="margin:0;">💊 Pharmacy</h1>
-    <p style="color:#555;font-size:13px;margin:4px 0 0;">
+    <p style="color:#2d5c6a;font-size:13px;margin:4px 0 0;">
         Prescription verification · Order management · Inventory · Dispensing
     </p>
 </div>""", unsafe_allow_html=True)
@@ -145,7 +145,7 @@ def show_verification():
         st.markdown("""
 <div class="qr-dropzone">
     <p style="font-size:28px;margin:0">📷</p>
-    <p style="color:#555;font-size:14px;margin:8px 0 0">Upload a QR code image to verify the prescription</p>
+    <p style="color:#2d5c6a;font-size:14px;margin:8px 0 0">Upload a QR code image to verify the prescription</p>
 </div>""", unsafe_allow_html=True)
         st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
@@ -226,7 +226,7 @@ def _display_prescription_card(result: dict):
     </div>
     <div style="margin-top:4px;">
         <p class="rx-field-label">Medicines</p>
-        <p class="rx-field-value" style="color:#fff;font-size:15px;">💊 {meds}</p>
+        <p class="rx-field-value" style="color:#0a3d47;font-size:15px;">💊 {meds}</p>
     </div>
 </div>""", unsafe_allow_html=True)
 
@@ -271,7 +271,7 @@ def _display_prescription_card_qr(data: dict):
     </div>
     <div>
         <p class="rx-field-label">Medicines</p>
-        <p class="rx-field-value" style="color:#fff;font-size:15px;">💊 {meds}</p>
+        <p class="rx-field-value" style="color:#0a3d47;font-size:15px;">💊 {meds}</p>
         <p class="rx-field-label">Dosage</p>
         <p class="rx-field-value">📋 {dosage}</p>
     </div>
@@ -573,7 +573,7 @@ def show_inventory_enhanced():
                 with col1:
                     st.markdown(f"""
 <div class="inv-bar-wrap"><div class="inv-bar" style="width:{pct}%;background:{bar_c}"></div></div>
-<p style="color:#555;font-size:11px;margin:4px 0">{stock} / 100 units</p>""", unsafe_allow_html=True)
+<p style="color:#2d5c6a;font-size:11px;margin:4px 0">{stock} / 100 units</p>""", unsafe_allow_html=True)
                 with col2:
                     new_stock = st.number_input("Set stock", min_value=0, max_value=9999,
                                                 value=stock, key=f"stk_{name}")

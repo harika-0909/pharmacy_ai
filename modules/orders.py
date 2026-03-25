@@ -65,8 +65,8 @@ def show():
 
     # Order Details — select-based UI (no expander = no icon overlap)
     st.markdown("""
-    <div style="margin-bottom: 12px; padding: 10px 0 6px 0; border-bottom: 1px solid #1a1a1a;">
-        <span style="color:#888; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Order Details</span>
+    <div style="margin-bottom: 12px; padding: 10px 0 6px 0; border-bottom: 1px solid rgba(72,184,206,0.45);">
+        <span style="color:#2d5c6a; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Order Details</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -96,26 +96,26 @@ def show():
 
         # Detail card
         st.markdown(f"""
-        <div style="background:#0d0d0d; border:1px solid #1e1e1e; border-radius:10px; padding:20px; margin-top:12px;">
+        <div style="background:rgba(255,255,255,0.9); border:1px solid rgba(72,184,206,0.55); border-radius:10px; padding:20px; margin-top:12px; box-shadow:0 2px 12px rgba(13,76,92,0.08);">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px;">
                 <div>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Prescription</p>
-                    <p style="color:#fff;font-weight:600;margin:0;">{presc_id}</p>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Patient</p>
-                    <p style="color:#e0e0e0;margin:0;">{patient}</p>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Doctor</p>
-                    <p style="color:#e0e0e0;margin:0;">{order.get('doctor_name', '—')}</p>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Treatment</p>
-                    <p style="color:#e0e0e0;margin:0;">{order.get('treatment_type', '—')}</p>
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Prescription</p>
+                    <p style="color:#0a3d47;font-weight:600;margin:0;">{presc_id}</p>
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Patient</p>
+                    <p style="color:#0a3d47;margin:0;">{patient}</p>
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Doctor</p>
+                    <p style="color:#0a3d47;margin:0;">{order.get('doctor_name', '—')}</p>
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Treatment</p>
+                    <p style="color:#0a3d47;margin:0;">{order.get('treatment_type', '—')}</p>
                 </div>
                 <div>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Medicines</p>
-                    <p style="color:#e0e0e0;margin:0;">{order.get('medicines', '—')}</p>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Dosage</p>
-                    <p style="color:#e0e0e0;margin:0;">{order.get('dosage', '—')}</p>
-                    <p style="color:#555;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Status · Created</p>
-                    <p style="color:#e0e0e0;margin:0;">{status.upper()} · {str(order.get('created_at', ''))[:16]}</p>
-                    {('<p style="color:#555;font-size:11px;margin-top:8px;">Updated by: ' + str(order.get('updated_by', '')) + '</p>') if order.get('updated_by') else ''}
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Medicines</p>
+                    <p style="color:#0a3d47;margin:0;">{order.get('medicines', '—')}</p>
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Dosage</p>
+                    <p style="color:#0a3d47;margin:0;">{order.get('dosage', '—')}</p>
+                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Status · Created</p>
+                    <p style="color:#0a3d47;margin:0;">{status.upper()} · {str(order.get('created_at', ''))[:16]}</p>
+                    {('<p style="color:#2d5c6a;font-size:11px;margin-top:8px;">Updated by: ' + str(order.get('updated_by', '')) + '</p>') if order.get('updated_by') else ''}
                 </div>
             </div>
         </div>

@@ -17,36 +17,36 @@ from modules.utils.db import (
 # ─────────────────── CSS ───────────────────
 PATIENT_CSS = """
 <style>
-/* Patient profile card */
+/* Patient profile card — sky theme */
 .pat-card {
-    background:#0a0a0a; border:1px solid #1a1a1a; border-radius:12px;
-    padding:18px; margin-bottom:4px;
+    background:rgba(255,255,255,0.92); border:1px solid rgba(72,184,206,0.5); border-radius:12px;
+    padding:18px; margin-bottom:4px; box-shadow:0 2px 10px rgba(13,76,92,0.06);
 }
-.pat-name  { font-size:18px;font-weight:800;color:#fff;margin:0; }
-.pat-sub   { color:#555;font-size:12px;margin:2px 0 0; }
+.pat-name  { font-size:18px;font-weight:800;color:#0a3d47;margin:0; }
+.pat-sub   { color:#2d5c6a;font-size:12px;margin:2px 0 0; }
 
 /* Med badge */
 .med-badge {
-    display:inline-block; background:#111; border:1px solid #222;
+    display:inline-block; background:rgba(197,238,246,0.5); border:1px solid rgba(72,184,206,0.45);
     border-radius:6px; padding:4px 10px; font-size:12px;
-    color:#ccc; margin:3px 3px 3px 0;
+    color:#0a3d47; margin:3px 3px 3px 0;
 }
-.med-badge-active   { border-color:#00cc4440; color:#00cc44; background:#001a0510; }
-.med-badge-inactive { border-color:#33333340; color:#555; }
+.med-badge-active   { border-color:rgba(13,138,91,0.5); color:#0d6b47; background:rgba(13,138,91,0.1); }
+.med-badge-inactive { border-color:rgba(72,184,206,0.35); color:#4a7a8a; }
 
 /* Adherence ring */
 .adh-ring-wrap   { text-align:center; padding:8px; }
-.adh-ring-value  { font-size:24px;font-weight:800;color:#fff; }
-.adh-ring-label  { font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.5px; }
+.adh-ring-value  { font-size:24px;font-weight:800;color:#0a3d47; }
+.adh-ring-label  { font-size:11px;color:#2d5c6a;text-transform:uppercase;letter-spacing:.5px; }
 
 /* History row */
 .hist-row {
     display:flex; gap:10px; align-items:center;
-    padding:8px 0; border-bottom:1px solid #0f0f0f; font-size:13px;
+    padding:8px 0; border-bottom:1px solid rgba(72,184,206,0.25); font-size:13px;
 }
-.hist-rx  { color:#fff;font-weight:700;min-width:90px; }
-.hist-med { color:#888;flex:1;font-size:12px; }
-.hist-date{ color:#333;font-size:11px; }
+.hist-rx  { color:#0a3d47;font-weight:700;min-width:90px; }
+.hist-med { color:#4a7a8a;flex:1;font-size:12px; }
+.hist-date{ color:#2d5c6a;font-size:11px; }
 
 /* Blood group badge */
 .blood-badge {
@@ -57,13 +57,14 @@ PATIENT_CSS = """
 
 /* Search result card */
 .search-card {
-    background:#080808; border:1px solid #181818; border-radius:10px;
+    background:rgba(255,255,255,0.92); border:1px solid rgba(72,184,206,0.5); border-radius:10px;
     padding:14px 16px; margin-bottom:8px;
     display:flex; gap:14px; align-items:flex-start;
+    box-shadow:0 1px 8px rgba(13,76,92,0.05);
 }
 .search-avatar {
-    width:44px;height:44px;border-radius:50%;background:#111;
-    border:1px solid #222;display:flex;align-items:center;
+    width:44px;height:44px;border-radius:50%;background:rgba(197,238,246,0.8);
+    border:1px solid rgba(72,184,206,0.45);display:flex;align-items:center;
     justify-content:center;font-size:18px;flex-shrink:0;
 }
 </style>
@@ -84,7 +85,7 @@ def show():
     st.markdown("""
 <div style="margin-bottom:8px;">
     <h1 style="margin:0;">👤 Patients</h1>
-    <p style="color:#555;font-size:13px;margin:4px 0 0;">
+    <p style="color:#2d5c6a;font-size:13px;margin:4px 0 0;">
         Patient management · Medication tracking · Adherence monitoring
     </p>
 </div>""", unsafe_allow_html=True)
@@ -158,24 +159,39 @@ def show_all():
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
         return
 
-    # Card mode
-    for patient in display:
-        pid    = str(patient["_id"])
-        name   = patient.get("name","Unknown")
-        age    = patient.get("age","—")
-        phone  = patient.get("phone","—")
-        blood  = patient.get("blood_group","")
-        cg     = patient.get("caregiver","—")
-        notes  = patient.get("medical_notes","")
-        meds   = patient.get("medications",[])
-        active = [m for m in meds if m.get("status")=="active"]
-        inactive = [m for m in meds if m.get("status")!="active"]
+    # Card mode — dropdown + detail panel (avoids expander / _arrow_right overlap)
+    def _patient_row_label(p):
+        n = p.get("name", "Unknown")
+        a = p.get("age", "—")
+        meds_local = p.get("medications", [])
+        ac = len([m for m in meds_local if m.get("status") == "active"])
+        return f"{n} · Age {a} · {ac} active med{'s' if ac != 1 else ''}"
 
-        blood_html = f'<span class="blood-badge">{blood}</span>' if blood else ""
-        label = f"{name}  ·  Age {age}  ·  {len(active)} active med{'s' if len(active)!=1 else ''}"
-        with st.expander(label):
-            # Header
-            st.markdown(f"""
+    row_labels = [_patient_row_label(p) for p in display]
+
+    st.markdown("**Select a patient to view and edit:**")
+    ix = st.selectbox(
+        "",
+        list(range(len(display))),
+        format_func=lambda i: row_labels[i],
+        key="pat_card_pick",
+        label_visibility="collapsed",
+    )
+    patient = display[ix]
+
+    pid = str(patient["_id"])
+    name = patient.get("name", "Unknown")
+    age = patient.get("age", "—")
+    phone = patient.get("phone", "—")
+    blood = patient.get("blood_group", "")
+    cg = patient.get("caregiver", "—")
+    notes = patient.get("medical_notes", "")
+    meds = patient.get("medications", [])
+    active = [m for m in meds if m.get("status") == "active"]
+    inactive = [m for m in meds if m.get("status") != "active"]
+
+    blood_html = f'<span class="blood-badge">{blood}</span>' if blood else ""
+    st.markdown(f"""
 <div class="pat-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
@@ -183,109 +199,119 @@ def show_all():
             <p class="pat-sub">Age {age} · 📞 {phone} · 👨‍👩‍👦 {cg} {blood_html}</p>
         </div>
         <div style="text-align:right">
-            <p style="color:#555;font-size:11px;margin:0">Active Medications</p>
-            <p style="color:#fff;font-size:22px;font-weight:800;margin:0">{len(active)}</p>
+            <p style="color:#2d5c6a;font-size:11px;margin:0">Active Medications</p>
+            <p style="color:#0a3d47;font-size:22px;font-weight:800;margin:0">{len(active)}</p>
         </div>
     </div>
 </div>""", unsafe_allow_html=True)
 
-            if notes:
-                st.warning(f"📋 {notes}")
+    if notes:
+        st.warning(f"📋 {notes}")
 
-            # Medications
-            if active or inactive:
-                st.markdown("**💊 Medications**")
-                all_med_html = ""
-                for m in active:
-                    all_med_html += f'<span class="med-badge med-badge-active">✓ {m.get("name","")}</span>'
-                for m in inactive:
-                    all_med_html += f'<span class="med-badge med-badge-inactive">{m.get("name","")}</span>'
-                st.markdown(all_med_html, unsafe_allow_html=True)
+    if active or inactive:
+        st.markdown("**💊 Medications**")
+        all_med_html = ""
+        for m in active:
+            all_med_html += f'<span class="med-badge med-badge-active">✓ {m.get("name","")}</span>'
+        for m in inactive:
+            all_med_html += f'<span class="med-badge med-badge-inactive">{m.get("name","")}</span>'
+        st.markdown(all_med_html, unsafe_allow_html=True)
 
-                if active:
-                    with st.expander("📋 Medication Details"):
-                        for m in active:
-                            st.markdown(
-                                f"• **{m.get('name','')}** — {m.get('dosage','—')} "
-                                f"_{m.get('strength','')} {m.get('dosage_form','')}_  "
-                                f"Rx: {m.get('prescription_id','')}  "
-                                f"by Dr.{m.get('prescribed_by','')}"
-                            )
+        if active:
+            st.markdown("**📋 Medication details**")
+            for m in active:
+                st.markdown(
+                    f"• **{m.get('name','')}** — {m.get('dosage','—')} "
+                    f"_{m.get('strength','')} {m.get('dosage_form','')}_  "
+                    f"Rx: {m.get('prescription_id','')}  "
+                    f"by Dr.{m.get('prescribed_by','')}"
+                )
 
-            st.markdown("---")
+    st.markdown("---")
 
-            col_edit, col_add = st.columns(2)
+    col_edit, col_add = st.columns(2)
 
-            with col_edit:
-                st.markdown("**✏️ Edit Info**")
-                new_phone = st.text_input("Phone", value=phone if phone!="—" else "",
-                                          key=f"ph_{pid}")
-                new_cg    = st.text_input("Caregiver", value=cg if cg!="—" else "",
-                                          key=f"cg_{pid}")
-                new_bg    = st.selectbox("Blood Group",
-                                         ["","A+","A-","B+","B-","O+","O-","AB+","AB-"],
-                                         index=(["","A+","A-","B+","B-","O+","O-","AB+","AB-"].index(blood)
-                                                if blood in ["","A+","A-","B+","B-","O+","O-","AB+","AB-"] else 0),
-                                         key=f"bg_{pid}")
-                new_notes = st.text_input("Medical Notes", value=notes, key=f"mn_{pid}")
-                if st.button("💾 Save", key=f"sv_{pid}"):
-                    update_patient(pid, {
-                        "phone": new_phone, "caregiver": new_cg,
-                        "blood_group": new_bg, "medical_notes": new_notes
-                    })
-                    st.success("Updated ✓")
-                    st.rerun()
+    with col_edit:
+        st.markdown("**✏️ Edit Info**")
+        new_phone = st.text_input("Phone", value=phone if phone != "—" else "", key=f"ph_{pid}")
+        new_cg = st.text_input("Caregiver", value=cg if cg != "—" else "", key=f"cg_{pid}")
+        new_bg = st.selectbox(
+            "Blood Group",
+            ["", "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+            index=(
+                ["", "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].index(blood)
+                if blood in ["", "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
+                else 0
+            ),
+            key=f"bg_{pid}",
+        )
+        new_notes = st.text_input("Medical Notes", value=notes, key=f"mn_{pid}")
+        if st.button("💾 Save", key=f"sv_{pid}"):
+            update_patient(
+                pid,
+                {
+                    "phone": new_phone,
+                    "caregiver": new_cg,
+                    "blood_group": new_bg,
+                    "medical_notes": new_notes,
+                },
+            )
+            st.success("Updated ✓")
+            st.rerun()
 
-            with col_add:
-                st.markdown("**➕ Add Medication**")
-                if med_names:
-                    new_med  = st.selectbox("Medicine", med_names, key=f"am_{pid}")
-                else:
-                    new_med  = st.text_input("Medicine", key=f"am_{pid}")
-                new_dose = st.text_input("Dosage", key=f"ad_{pid}",
-                                         placeholder="e.g. 500mg twice daily")
-                if st.button("➕ Add", key=f"ab_{pid}"):
-                    if new_med:
-                        add_medication_to_patient(pid, {
-                            "name": new_med, "dosage": new_dose,
-                            "prescribed_by": st.session_state.get("username",""),
-                            "status": "active",
-                            "added_at": datetime.utcnow().isoformat()
-                        })
-                        st.success(f"Added {new_med} ✓")
-                        st.rerun()
+    with col_add:
+        st.markdown("**➕ Add Medication**")
+        if med_names:
+            new_med = st.selectbox("Medicine", med_names, key=f"am_{pid}")
+        else:
+            new_med = st.text_input("Medicine", key=f"am_{pid}")
+        new_dose = st.text_input("Dosage", key=f"ad_{pid}", placeholder="e.g. 500mg twice daily")
+        if st.button("➕ Add", key=f"ab_{pid}"):
+            if new_med:
+                add_medication_to_patient(
+                    pid,
+                    {
+                        "name": new_med,
+                        "dosage": new_dose,
+                        "prescribed_by": st.session_state.get("username", ""),
+                        "status": "active",
+                        "added_at": datetime.utcnow().isoformat(),
+                    },
+                )
+                st.success(f"Added {new_med} ✓")
+                st.rerun()
 
-                if active:
-                    st.markdown("**🗑️ Remove Medication**")
-                    rem_med = st.selectbox("Remove", [m.get("name") for m in active], key=f"rm_{pid}")
-                    if st.button("Remove", key=f"rb_{pid}"):
-                        remove_medication_from_patient(pid, rem_med)
-                        st.success(f"Removed {rem_med}")
-                        st.rerun()
+        if active:
+            st.markdown("**🗑️ Remove Medication**")
+            rem_med = st.selectbox("Remove", [m.get("name") for m in active], key=f"rm_{pid}")
+            if st.button("Remove", key=f"rb_{pid}"):
+                remove_medication_from_patient(pid, rem_med)
+                st.success(f"Removed {rem_med}")
+                st.rerun()
 
-            # Prescription history
-            st.markdown("---")
-            st.markdown("**📋 Prescription History**")
-            prescriptions = get_prescriptions_by_patient(name)
-            if prescriptions:
-                for pr in sorted(prescriptions, key=lambda x: x.get("created_at", datetime.min), reverse=True)[:5]:
-                    rx_id  = pr.get("prescription_id","—")
-                    doc    = pr.get("doctor_name","—")
-                    meds_s = pr.get("medicines","—")
-                    if len(meds_s) > 50: meds_s = meds_s[:50]+"…"
-                    date   = str(pr.get("created_at",""))[:10]
-                    order  = get_order_by_prescription(rx_id)
-                    status = order.get("status","—") if order else "—"
+    st.markdown("---")
+    st.markdown("**📋 Prescription History**")
+    prescriptions = get_prescriptions_by_patient(name)
+    if prescriptions:
+        for pr in sorted(prescriptions, key=lambda x: x.get("created_at", datetime.min), reverse=True)[:5]:
+            rx_id = pr.get("prescription_id", "—")
+            doc = pr.get("doctor_name", "—")
+            meds_s = pr.get("medicines", "—")
+            if len(meds_s) > 50:
+                meds_s = meds_s[:50] + "…"
+            date = str(pr.get("created_at", ""))[:10]
+            order = get_order_by_prescription(rx_id)
+            status = order.get("status", "—") if order else "—"
 
-                    st.markdown(f"""
+            st.markdown(f"""
 <div class="hist-row">
     <span class="hist-rx">{rx_id}</span>
     <span class="hist-med">Dr. {doc} · {meds_s}</span>
     {_status_pill(status)}
     <span class="hist-date">{date}</span>
 </div>""", unsafe_allow_html=True)
-            else:
-                st.caption("No prescription history")
+    else:
+        st.caption("No prescription history")
 
 
 # ──────────────────────────────────────────────
@@ -371,29 +397,35 @@ def show_search():
 <div class="search-card">
     <div class="search-avatar">👤</div>
     <div style="flex:1">
-        <p style="color:#fff;font-weight:700;font-size:15px;margin:0">{name}</p>
-        <p style="color:#555;font-size:12px;margin:3px 0">
+        <p style="color:#0a3d47;font-weight:700;font-size:15px;margin:0">{name}</p>
+        <p style="color:#2d5c6a;font-size:12px;margin:3px 0">
             Age {age} · 📞 {phone}
             {' · <span class="blood-badge">' + blood + '</span>' if blood else ''}
         </p>
-        <p style="color:#444;font-size:12px;margin:3px 0">Caregiver: {cg}</p>
-        <p style="color:#444;font-size:12px;margin:3px 0">{len(active)} active medication(s)</p>
+        <p style="color:#4a7a8a;font-size:12px;margin:3px 0">Caregiver: {cg}</p>
+        <p style="color:#4a7a8a;font-size:12px;margin:3px 0">{len(active)} active medication(s)</p>
     </div>
 </div>""", unsafe_allow_html=True)
 
-        with st.expander(f"Full details — {name}"):
-            if active:
-                st.markdown("**Active Medications:**")
-                for m in active:
-                    st.markdown(f"• **{m.get('name','')}** — {m.get('dosage','')} _{m.get('prescribed_by','')}_")
+        st.markdown(f"**Full details — {name}**")
+        if active:
+            st.markdown("**Active medications**")
+            for m in active:
+                st.markdown(
+                    f"• **{m.get('name','')}** — {m.get('dosage','')} _{m.get('prescribed_by','')}_"
+                )
 
-            prescriptions = get_prescriptions_by_patient(name)
-            if prescriptions:
-                st.markdown(f"**{len(prescriptions)} Prescription(s):**")
-                for pr in sorted(prescriptions, key=lambda x: x.get("created_at", datetime.min), reverse=True)[:3]:
-                    rx_id  = pr.get("prescription_id","—")
-                    date   = str(pr.get("created_at",""))[:10]
-                    st.caption(f"• {rx_id} · Dr. {pr.get('doctor_name','—')} · {date}")
+        prescriptions = get_prescriptions_by_patient(name)
+        if prescriptions:
+            st.markdown(f"**{len(prescriptions)} prescription(s)**")
+            for pr in sorted(
+                prescriptions, key=lambda x: x.get("created_at", datetime.min), reverse=True
+            )[:3]:
+                rx_id = pr.get("prescription_id", "—")
+                date = str(pr.get("created_at", ""))[:10]
+                st.caption(f"• {rx_id} · Dr. {pr.get('doctor_name','—')} · {date}")
+
+        st.markdown("---")
 
 
 # ──────────────────────────────────────────────
@@ -421,55 +453,77 @@ def show_adherence():
 
     st.markdown("---")
 
-    for patient in patients:
-        pid  = str(patient["_id"])
-        name = patient.get("name","Unknown")
-        age  = patient.get("age","—")
-        active = [m for m in patient.get("medications",[]) if m.get("status")=="active"]
+    with_active = [
+        p for p in patients
+        if any(m.get("status") == "active" for m in p.get("medications", []))
+    ]
+    if not with_active:
+        st.info("No patients with active medications to track.")
+    else:
+        adh_labels = []
+        for patient in with_active:
+            pid = str(patient["_id"])
+            name = patient.get("name", "Unknown")
+            age = patient.get("age", "—")
+            sc = adherence_data.get(pid, 85)
+            stxt = "🔴 Critical" if sc < 60 else ("🟡 Moderate" if sc < 80 else "🟢 Good")
+            adh_labels.append(f"{name} · Age {age} · {stxt} · {sc}%")
 
-        if not active:
-            continue
-
+        st.markdown("**Select a patient:**")
+        adh_ix = st.selectbox(
+            "",
+            list(range(len(with_active))),
+            format_func=lambda i: adh_labels[i],
+            key="adh_patient_pick",
+            label_visibility="collapsed",
+        )
+        patient = with_active[adh_ix]
+        pid = str(patient["_id"])
+        name = patient.get("name", "Unknown")
+        age = patient.get("age", "—")
+        active = [m for m in patient.get("medications", []) if m.get("status") == "active"]
         score = adherence_data.get(pid, 85)
+        bar_color = "#ff2d2d" if score < 60 else ("#ffaa00" if score < 80 else "#00cc44")
+        status_txt = "🔴 Critical" if score < 60 else ("🟡 Moderate" if score < 80 else "🟢 Good")
 
-        bar_color = "#ff2d2d" if score<60 else ("#ffaa00" if score<80 else "#00cc44")
-        status_txt = "🔴 Critical" if score<60 else ("🟡 Moderate" if score<80 else "🟢 Good")
+        st.caption(f"{name} · Age {age} · {status_txt}")
 
-        with st.expander(f"{name}  ·  Age {age}  ·  {status_txt}  ·  {score}%"):
-            col1,col2 = st.columns([3,1])
-            with col1:
-                new_score = st.slider(
-                    "Adherence Score (%)", 0, 100, score,
-                    key=f"adh_sl_{pid}",
-                    help="Drag to update patient's observed adherence"
-                )
-                if new_score != score:
-                    adherence_data[pid] = new_score
-                    st.session_state["adherence_scores"] = adherence_data
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            new_score = st.slider(
+                "Adherence Score (%)",
+                0,
+                100,
+                score,
+                key=f"adh_sl_{pid}",
+                help="Drag to update patient's observed adherence",
+            )
+            if new_score != score:
+                adherence_data[pid] = new_score
+                st.session_state["adherence_scores"] = adherence_data
 
-                st.markdown(f"""
-<div style="background:#111;border-radius:6px;height:8px;margin:4px 0 8px">
+            st.markdown(f"""
+<div style="background:rgba(197,238,246,0.85);border-radius:6px;height:8px;margin:4px 0 8px">
     <div style="background:{bar_color};width:{new_score}%;height:8px;border-radius:6px;transition:width .3s"></div>
 </div>""", unsafe_allow_html=True)
 
-                if new_score < 60:
-                    st.error("⚠️ Critical adherence — immediate intervention needed. Contact caregiver.")
-                elif new_score < 80:
-                    st.warning("⚠️ Moderate adherence — consider setting custom dose reminders.")
-                else:
-                    st.success("✅ Good adherence — patient is taking medications as prescribed.")
+            if new_score < 60:
+                st.error("⚠️ Critical adherence — immediate intervention needed. Contact caregiver.")
+            elif new_score < 80:
+                st.warning("⚠️ Moderate adherence — consider setting custom dose reminders.")
+            else:
+                st.success("✅ Good adherence — patient is taking medications as prescribed.")
 
-            with col2:
-                st.markdown(f"""
+        with col2:
+            st.markdown(f"""
 <div class="adh-ring-wrap">
     <p class="adh-ring-value" style="color:{bar_color}">{new_score}%</p>
     <p class="adh-ring-label">Adherence</p>
 </div>""", unsafe_allow_html=True)
 
-            # Active medications list
-            st.markdown("**Active meds being tracked:**")
-            for m in active:
-                st.markdown(f"• **{m.get('name','')}** — {m.get('dosage','')}")
+        st.markdown("**Active meds being tracked:**")
+        for m in active:
+            st.markdown(f"• **{m.get('name','')}** — {m.get('dosage','')}")
 
     # Export
     if adherence_data:

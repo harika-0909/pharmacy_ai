@@ -66,110 +66,132 @@ DOSE_WINDOWS = [
 # ─────────────────────────────────────────────────────────────────────────────
 ALERT_CSS = """
 <style>
-@keyframes pulse-red {
-  0%,100% { box-shadow: 0 0 0 0 rgba(255,45,45,.4); }
-  50%      { box-shadow: 0 0 0 8px rgba(255,45,45,0); }
+@keyframes pulse-urgent {
+  0%,100% { box-shadow: 0 0 0 0 rgba(198,40,40,.25); }
+  50%      { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
 }
 .alert-card {
     display:flex; align-items:flex-start; gap:14px;
-    padding:14px 18px; border-radius:10px; margin-bottom:10px;
-    border:1px solid transparent; transition:transform .15s ease;
+    padding:14px 18px; border-radius:10px; margin-bottom:8px;
+    border:1px solid transparent; transition:transform .15s ease, box-shadow .2s;
+    box-shadow:0 1px 6px rgba(13,76,92,0.06);
 }
-.alert-card:hover { transform:translateX(3px); }
+.alert-card:hover { transform:translateX(2px); }
 .alert-critical {
-    background:linear-gradient(135deg,#1a0000,#0d0000);
-    border-color:#ff2d2d !important;
-    animation: pulse-red 2.4s infinite;
+    background:linear-gradient(135deg,rgba(255,232,234,.98),rgba(255,245,245,.92));
+    border-color:rgba(198,40,40,.45) !important;
+    animation: pulse-urgent 2.4s infinite;
 }
 .alert-warning {
-    background:linear-gradient(135deg,#1a1000,#0d0900);
-    border-color:#ffaa00 !important;
-    box-shadow:0 0 16px rgba(255,170,0,.12);
+    background:linear-gradient(135deg,rgba(255,250,235,.98),rgba(255,248,225,.94));
+    border-color:rgba(200,130,0,.45) !important;
+    box-shadow:0 2px 10px rgba(200,130,0,.08);
 }
 .alert-info {
-    background:linear-gradient(135deg,#00101a,#00090d);
-    border-color:#00aaff !important;
-    box-shadow:0 0 16px rgba(0,170,255,.12);
+    background:linear-gradient(135deg,rgba(224,247,252,.95),rgba(197,238,246,.9));
+    border-color:rgba(72,184,206,.55) !important;
+    box-shadow:0 2px 10px rgba(72,184,206,.1);
 }
 .alert-high {
-    background:linear-gradient(135deg,#150010,#0d0008);
-    border-color:#cc44ff !important;
-    box-shadow:0 0 16px rgba(200,68,255,.15);
+    background:linear-gradient(135deg,rgba(243,236,255,.95),rgba(232,224,252,.9));
+    border-color:rgba(120,80,180,.4) !important;
+    box-shadow:0 2px 10px rgba(120,80,180,.08);
 }
 .alert-success {
-    background:linear-gradient(135deg,#001a05,#000d02);
-    border-color:#00cc44 !important;
-    box-shadow:0 0 12px rgba(0,204,68,.1);
+    background:linear-gradient(135deg,rgba(232,250,242,.95),rgba(220,245,234,.92));
+    border-color:rgba(13,138,91,.45) !important;
+    box-shadow:0 2px 8px rgba(13,138,91,.08);
 }
 .alert-icon {
     width:40px;height:40px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     font-size:18px;flex-shrink:0;
 }
-.icon-critical { background:rgba(255,45,45,.18); }
-.icon-warning  { background:rgba(255,170,0,.18); }
-.icon-info     { background:rgba(0,170,255,.18); }
-.icon-high     { background:rgba(200,68,255,.18); }
-.icon-success  { background:rgba(0,204,68,.18); }
+.icon-critical { background:rgba(198,40,40,.15); }
+.icon-warning  { background:rgba(245,180,0,.18); }
+.icon-info     { background:rgba(72,184,206,.2); }
+.icon-high     { background:rgba(140,90,200,.15); }
+.icon-success  { background:rgba(13,138,91,.15); }
 .alert-body  { flex:1; }
-.alert-msg   { color:#fff;font-weight:600;font-size:14px;margin:0 0 3px; }
-.alert-act   { color:#888;font-size:12px;margin:0; }
+.alert-msg   { color:#0a3d47;font-weight:700;font-size:14px;margin:0 0 4px; }
+.alert-msg b { color:#0a3d47; }
+.alert-act   { color:#2d5c6a;font-size:12px;margin:0; }
 .alert-badge {
     display:inline-block; padding:2px 10px; border-radius:20px;
     font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
     flex-shrink:0;align-self:flex-start;margin-top:2px;
 }
-.badge-critical { background:#ff2d2d20;color:#ff2d2d;border:1px solid #ff2d2d40; }
-.badge-warning  { background:#ffaa0020;color:#ffaa00;border:1px solid #ffaa0040; }
-.badge-info     { background:#00aaff20;color:#00aaff;border:1px solid #00aaff40; }
-.badge-high     { background:#cc44ff20;color:#cc44ff;border:1px solid #cc44ff40; }
-.badge-success  { background:#00cc4420;color:#00cc44;border:1px solid #00cc4440; }
+.badge-critical { background:rgba(198,40,40,.12);color:#a31e1e;border:1px solid rgba(198,40,40,.35); }
+.badge-warning  { background:rgba(200,130,0,.12);color:#8a5a00;border:1px solid rgba(200,130,0,.35); }
+.badge-info     { background:rgba(13,110,140,.12);color:#0d5c7a;border:1px solid rgba(72,184,206,.45); }
+.badge-high     { background:rgba(120,60,180,.12);color:#5c3d8a;border:1px solid rgba(120,60,180,.3); }
+.badge-success  { background:rgba(13,138,91,.12);color:#0d6b47;border:1px solid rgba(13,138,91,.35); }
 
 .summary-strip {
     display:grid;grid-template-columns:repeat(5,1fr);
     gap:12px;margin-bottom:24px;
 }
 .summary-card {
-    background:#0a0a0a;border:1px solid #1a1a1a;border-radius:12px;
+    background:rgba(255,255,255,.9);border:1px solid rgba(72,184,206,.45);border-radius:12px;
     padding:16px;text-align:center;
+    box-shadow:0 2px 12px rgba(13,76,92,0.07);
 }
 .summary-count { font-size:26px;font-weight:800;margin:0; }
-.summary-label { color:#555;font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin:4px 0 0; }
-.count-critical{ color:#ff2d2d !important; }
-.count-warning { color:#ffaa00 !important; }
-.count-info    { color:#00aaff !important; }
-.count-high    { color:#cc44ff !important; }
-.count-success { color:#00cc44 !important; }
+.summary-label { color:#2d5c6a;font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin:4px 0 0; }
+.count-critical{ color:#c62828 !important; }
+.count-warning { color:#c47a00 !important; }
+.count-info   { color:#0d5c7a !important; }
+.count-high   { color:#6b4c9a !important; }
+.count-success { color:#0d8a5b !important; }
 
 .section-hdr {
     display:flex;align-items:center;gap:10px;
-    margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1a1a1a;
+    margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(72,184,206,.35);
 }
-.section-hdr-title { font-size:15px;font-weight:700;color:#fff;margin:0; }
+.section-hdr-title { font-size:15px;font-weight:700;color:#0a3d47;margin:0; }
 .section-hdr-count {
-    background:#1a1a1a;color:#aaa;border-radius:20px;
+    background:rgba(197,238,246,.75);color:#2d5c6a;border:1px solid rgba(72,184,206,.4);border-radius:20px;
     padding:1px 10px;font-size:11px;font-weight:600;
 }
 
-.empty-state   { text-align:center;padding:40px 20px;color:#444; }
+.empty-state   { text-align:center;padding:40px 20px;color:#4a7a8a; }
 .empty-icon    { font-size:36px;margin-bottom:8px; }
 .empty-text    { font-size:14px; }
 
 .ack-log-row {
     display:flex;gap:10px;align-items:center;
-    padding:8px 12px;border-radius:8px;margin-bottom:6px;background:#0a0a0a;
-    border:1px solid #1a1a1a;
+    padding:8px 12px;border-radius:8px;margin-bottom:6px;
+    background:rgba(255,255,255,.88); border:1px solid rgba(72,184,206,.4);
 }
-.ack-log-msg  { flex:1;color:#ccc;font-size:13px; }
-.ack-log-meta { color:#444;font-size:11px;flex-shrink:0; }
+.ack-log-msg  { flex:1;color:#0a3d47;font-size:13px; }
+.ack-log-meta { color:#4a7a8a;font-size:11px;flex-shrink:0; }
 
 .refresh-bar {
     display:flex;align-items:center;gap:8px;
-    padding:6px 14px;background:#0a0a0a;border:1px solid #1a1a1a;
+    padding:6px 14px;background:rgba(255,255,255,.85);border:1px solid rgba(72,184,206,.4);
     border-radius:8px;margin-bottom:16px;
 }
-.refresh-dot { width:8px;height:8px;border-radius:50%;background:#00cc44;
-               animation:pulse-red 1.5s infinite; margin-right:4px; }
+.refresh-dot { width:8px;height:8px;border-radius:50%;background:#0d8a5b;
+               animation:pulse-urgent 1.8s infinite; margin-right:4px; }
+
+.pharm-stock-bundle {
+    background:rgba(255,255,255,.78);
+    border:1px solid rgba(72,184,206,.42);
+    border-radius:12px;
+    padding:10px 14px 14px;
+    margin-bottom:14px;
+    box-shadow:0 2px 10px rgba(13,76,92,0.06);
+}
+
+/* Streamlit bordered container (restock bundles) */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-color:rgba(72,184,206,.5) !important;
+    background:rgba(255,255,255,.55) !important;
+    border-radius:12px !important;
+    padding:4px 8px 12px !important;
+    margin-bottom:12px !important;
+    box-shadow:0 2px 10px rgba(13,76,92,0.06) !important;
+}
 
 @media(max-width:600px){
     .summary-strip{grid-template-columns:repeat(2,1fr);}
@@ -368,6 +390,14 @@ def get_all_alerts():
 # UI helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _alert_bundle():
+    """Group alert row + restock controls (border when Streamlit supports it)."""
+    try:
+        return st.container(border=True)
+    except TypeError:
+        return st.container()
+
+
 def _render_card(msg: str, action: str, severity: str, icon: str, alert_id: str = None, show_ack: bool = False):
     sev = severity.lower()
     ack_html = ""
@@ -446,7 +476,7 @@ def _auto_refresh_widget():
         for i in range(60, 0, -1):
             countdown.markdown(
                 f'<div class="refresh-bar"><div class="refresh-dot"></div>'
-                f'<span style="color:#555;font-size:12px;">Refreshing in {i}s…</span></div>',
+                f'<span style="color:#2d5c6a;font-size:12px;">Refreshing in {i}s…</span></div>',
                 unsafe_allow_html=True
             )
             _time.sleep(1)
@@ -469,7 +499,7 @@ def show_alerts():
     st.markdown("""
 <div style="margin-bottom:8px;">
     <h1 style="margin:0;">🚨 Alerts &amp; Reminders</h1>
-    <p style="color:#555;font-size:13px;margin:4px 0 0;">
+    <p style="color:#2d5c6a;font-size:13px;margin:4px 0 0;">
         Real-time medication alerts · Low stock · Expiry · Dose reminders · Order delays
     </p>
 </div>""", unsafe_allow_html=True)
@@ -603,47 +633,56 @@ def _tab_low_stock(tab, ls: list, username: str):
             log_alert("low_stock_critical", f"{len(crit)} critical stock items", "critical")
             _section_hdr("Critical — Needs Immediate Restock", len(crit), "🔴")
             for a in crit:
-                _render_card(
-                    f"<b>{a['medicine']}</b> — {a['stock']} units left",
-                    a["action"], "critical", "🚨"
-                )
-                # One-click restock
-                col1, col2, col3 = st.columns([2, 1, 1])
-                with col1:
-                    qty = st.number_input(
-                        "Units to add", min_value=1, max_value=1000, value=50,
-                        key=f"restock_qty_{a['medicine']}"
+                with _alert_bundle():
+                    _render_card(
+                        f"<b>{a['medicine']}</b> — {a['stock']} units left",
+                        a["action"],
+                        "critica    l",
+                        "🚨",
                     )
-                with col2:
-                    st.write("")
-                    if st.button("📦 Restock Now", key=f"restock_{a['medicine']}"):
-                        ok = restock_item(a["medicine"], qty, username)
-                        if ok:
-                            st.success(f"✅ Restocked {a['medicine']} +{qty} units")
-                            st.rerun()
-                        else:
-                            st.error("Restock failed — item not found in inventory.")
-                st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+                    c_qty, c_btn = st.columns([2, 1])
+                    with c_qty:
+                        qty = st.number_input(
+                            "Units to add",
+                            min_value=1,
+                            max_value=1000,
+                            value=50,
+                            key=f"restock_qty_{a['medicine']}",
+                        )
+                    with c_btn:
+                        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                        if st.button("📦 Restock Now", key=f"restock_{a['medicine']}"):
+                            ok = restock_item(a["medicine"], qty, username)
+                            if ok:
+                                st.success(f"✅ Restocked {a['medicine']} +{qty} units")
+                                st.rerun()
+                            else:
+                                st.error("Restock failed — item not found in inventory.")
 
         if warn:
             _section_hdr("Warning — Low Stock", len(warn), "🟡")
             for a in warn:
-                _render_card(
-                    f"<b>{a['medicine']}</b> — {a['stock']} units left",
-                    a["action"], "warning", "⚠️"
-                )
-                col1, col2 = st.columns([2, 1])
-                with col1:
-                    qty = st.number_input(
-                        "Units to add", min_value=1, value=30,
-                        key=f"restock_qty_{a['medicine']}"
+                with _alert_bundle():
+                    _render_card(
+                        f"<b>{a['medicine']}</b> — {a['stock']} units left",
+                        a["action"],
+                        "warning",
+                        "⚠️",
                     )
-                with col2:
-                    st.write("")
-                    if st.button("📦 Restock", key=f"restock_{a['medicine']}"):
-                        restock_item(a["medicine"], qty, username)
-                        st.success(f"✅ Restocked +{qty}")
-                        st.rerun()
+                    w_qty, w_btn = st.columns([2, 1])
+                    with w_qty:
+                        qty = st.number_input(
+                            "Units to add",
+                            min_value=1,
+                            value=30,
+                            key=f"restock_qty_{a['medicine']}",
+                        )
+                    with w_btn:
+                        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                        if st.button("📦 Restock", key=f"restock_{a['medicine']}"):
+                            restock_item(a["medicine"], qty, username)
+                            st.success(f"✅ Restocked +{qty}")
+                            st.rerun()
 
         # Summary table
         st.markdown("---")
@@ -716,7 +755,7 @@ def _tab_dose_scheduler(tab, username: str, role: str):
     with tab:
         st.markdown("""
 <div style="margin-bottom:12px;">
-    <p style="color:#888;font-size:13px;margin:0;">
+    <p style="color:#4a7a8a;font-size:13px;margin:0;">
         Schedule exact dose times per patient · Alerts fire 30 min before and flag missed doses up to 2h after
     </p>
 </div>""", unsafe_allow_html=True)
@@ -933,22 +972,46 @@ def show_dashboard_widget():
         crit = len([a for a in ls if a["severity"]=="critical"]) + \
                len([a for a in exp if a["severity"]=="critical"])
 
-        st.markdown(f"""
-<div style="background:{'#1a0000' if crit else '#0a0a0a'};
-            border:1px solid {'#ff2d2d' if crit else '#1a1a1a'};
-            border-radius:10px;padding:14px 18px;margin-bottom:16px;
-            display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+        bg = "rgba(255,230,232,0.95)" if crit else "rgba(255,255,255,0.92)"
+        br = "rgba(220,80,80,0.55)" if crit else "rgba(72,184,206,0.55)"
+        title_c = "#b71c1c" if crit else "#c47a00"
+        from modules.login import get_menu_options
+
+        alert_menu_label = "🚨 Alerts"
+        can_open_alerts = alert_menu_label in get_menu_options(
+            st.session_state.get("role", "")
+        )
+
+        col_banner, col_go = st.columns([5, 1])
+        with col_banner:
+            st.markdown(f"""
+<div style="background:{bg};
+            border:1px solid {br};
+            border-radius:10px;padding:14px 18px;margin-bottom:4px;
+            display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+            box-shadow:0 2px 10px rgba(13,76,92,0.08);">
     <span style="font-size:22px">{'🚨' if crit else '⚠️'}</span>
-    <div style="flex:1">
-        <p style="color:{'#ff2d2d' if crit else '#ffaa00'};font-weight:700;font-size:14px;margin:0">
+    <div style="flex:1;min-width:200px">
+        <p style="color:{title_c};font-weight:700;font-size:14px;margin:0">
             {total} Active Alert{'s' if total!=1 else ''}
         </p>
-        <p style="color:#555;font-size:12px;margin:2px 0 0">
+        <p style="color:#2d5c6a;font-size:12px;margin:2px 0 0;line-height:1.45">
             {'Critical: ' + str(crit) + ' · ' if crit else ''}
             Low stock: {len(ls)} · Missed doses: {len(md)} · Orders: {len(po)} · Expiry: {len(exp)}
         </p>
     </div>
-    <span style="color:#444;font-size:12px">→ Go to 🚨 Alerts</span>
 </div>""", unsafe_allow_html=True)
+        with col_go:
+            if can_open_alerts:
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                if st.button(
+                    "Go to Alerts →",
+                    key="dashboard_goto_alerts",
+                    use_container_width=True,
+                    help="Open the Alerts page",
+                ):
+                    st.session_state["main_nav"] = alert_menu_label
+                    st.rerun()
+        st.markdown("<div style='margin-bottom:12px'></div>", unsafe_allow_html=True)
     except Exception:
         pass
