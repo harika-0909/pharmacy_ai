@@ -2,6 +2,7 @@
 Doctor Module — Premium Rebuild
 Tabs: New Prescription · My Prescriptions · Patient Lookup
 """
+from html import escape
 import streamlit as st
 import uuid
 import json
@@ -14,59 +15,79 @@ from modules.utils.db import (
     get_all_patients, get_patient_by_name, create_patient,
     add_medication_to_patient, get_all_medicines,
     get_prescriptions_by_doctor, get_all_prescriptions,
-    get_order_by_prescription
+    get_order_by_prescription, get_prescriptions_by_patient,
+    search_patients,
 )
 from modules.utils.cloudinary_config import upload_qr_code, is_configured as cloudinary_configured
 
-# ─────────────────── CSS ───────────────────
+# ─────────────────── CSS (sky theme — matches app) ───────────────────
 DOCTOR_CSS = """
 <style>
-/* Medicine chip */
 .med-chip {
     display:inline-flex; align-items:center; gap:6px;
-    background:#111; border:1px solid #222; border-radius:8px;
-    padding:6px 12px; margin:4px; font-size:13px; color:#e0e0e0;
+    background:rgba(255,255,255,.92); border:1px solid rgba(72,184,206,.5); border-radius:8px;
+    padding:6px 12px; margin:4px 4px 4px 0; font-size:13px; color:#0a3d47;
 }
-.med-chip-cat  { color:#555; font-size:11px; }
-.med-chip-warn { border-color:#ffaa00; background:#120e00; }
+.med-chip-cat { color:#4a7a8a; font-size:11px; }
+.med-chip-warn { border-color:rgba(184,134,11,.55); background:rgba(255,248,220,.9); }
 
-/* Interaction banner */
 .interaction-banner {
-    background:#1a1000; border:1px solid #ffaa0050;
-    border-left:3px solid #ffaa00; border-radius:8px;
+    background:rgba(255,243,224,.96); border:1px solid rgba(255,170,0,.4);
+    border-left:3px solid #e65100; border-radius:8px;
     padding:10px 14px; margin:8px 0;
     display:flex; gap:10px; align-items:flex-start;
 }
 
-/* Rx result card */
 .rx-result {
-    background:#050505; border:1px solid #1a1a1a; border-radius:12px;
-    padding:20px; margin-top:16px;
+    background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(232,248,252,.92));
+    border:1px solid rgba(72,184,206,.45); border-radius:12px;
+    padding:18px; margin-top:12px;
+    box-shadow:0 2px 12px rgba(13,76,92,.06);
 }
 .rx-result-id {
-    font-size:22px; font-weight:900; color:#fff;
-    letter-spacing:-1px; margin-bottom:16px; display:block;
+    font-size:20px; font-weight:800; color:#0a3d47;
+    letter-spacing:-0.5px; margin-bottom:14px; display:block;
 }
 .success-pulse {
-    background:#001a05; border:1px solid #00cc4430;
-    border-left:3px solid #00cc44; border-radius:8px;
-    padding:12px 16px; font-size:14px; color:#00cc44;
+    background:rgba(230,250,245,.95); border:1px solid rgba(13,138,91,.35);
+    border-left:3px solid #0d8a5b; border-radius:8px;
+    padding:12px 16px; font-size:14px; color:#0d6b47;
     font-weight:600; margin-bottom:12px;
 }
 
-/* Prescription history item */
 .rx-hist-item {
-    display:flex; gap:12px; align-items:flex-start;
-    padding:12px 0; border-bottom:1px solid #0f0f0f;
+    display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;
+    padding:10px 0; border-bottom:1px solid rgba(72,184,206,.28);
 }
-.rx-hist-id   { color:#fff; font-weight:700; font-size:13px; min-width:90px; }
-.rx-hist-body { flex:1; color:#888; font-size:12px; }
-.rx-hist-date { color:#333; font-size:11px; flex-shrink:0; }
+.rx-hist-id   { color:#0a3d47; font-weight:700; font-size:13px; min-width:90px; }
+.rx-hist-body { flex:1; color:#4a7a8a; font-size:12px; min-width:100px; }
+.rx-hist-date { color:#2d5c6a; font-size:11px; flex-shrink:0; }
 
-/* Patient card */
 .pat-mini {
-    background:#0a0a0a; border:1px solid #1a1a1a; border-radius:10px;
+    background:rgba(255,255,255,.9);
+    border:1px solid rgba(72,184,206,.45); border-radius:10px;
     padding:14px; margin-bottom:8px;
+}
+
+.doc-current-meds {
+    background:rgba(255,255,255,.78);
+    border:1px solid rgba(72,184,206,.4);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-top:8px;
+}
+.doc-rx-detail {
+    background:rgba(255,255,255,.9);
+    border:1px solid rgba(72,184,206,.42);
+    border-radius:12px;
+    padding:16px 18px;
+    margin-top:10px;
+    box-shadow:0 2px 10px rgba(13,76,92,.05);
+}
+.doc-rx-detail-h {
+    font-size:15px; font-weight:700; color:#0a3d47;
+    margin:0 0 12px; padding-bottom:10px;
+    border-bottom:1px solid rgba(72,184,206,.35);
 }
 </style>
 """
@@ -86,7 +107,7 @@ def show():
     st.markdown("""
 <div style="margin-bottom:8px;">
     <h1 style="margin:0;">👨‍⚕️ Doctor Portal</h1>
-    <p style="color:#555;font-size:13px;margin:4px 0 0;">
+    <p style="color:#2d5c6a;font-size:13px;margin:4px 0 0;">
         Create prescriptions · View history · Look up patients
     </p>
 </div>""", unsafe_allow_html=True)
@@ -145,10 +166,22 @@ def _tab_new_prescription(medicine_names, med_lookup):
             col4.metric("Blood Group",  sel_pat.get("blood_group","—"))
 
             if active_meds:
-                with st.expander("💊 Current Medications"):
-                    for m in active_meds:
-                        st.write(f"• **{m.get('name','')}** — {m.get('dosage','')} "
-                                 f"_{m.get('prescribed_by','')}_")
+                st.markdown(
+                    '<p style="margin:10px 0 6px;font-weight:700;color:#0a3d47;font-size:13px;">'
+                    "💊 Current medications</p>",
+                    unsafe_allow_html=True,
+                )
+                lines = "".join(
+                    f'<p style="margin:4px 0;font-size:13px;color:#2d5c6a;">• '
+                    f"<strong>{escape(str(m.get('name','')))}</strong> — "
+                    f"{escape(str(m.get('dosage','')))} "
+                    f'<span style="color:#4a7a8a;">Dr. {escape(str(m.get("prescribed_by","")))}</span></p>'
+                    for m in active_meds
+                )
+                st.markdown(
+                    f'<div class="doc-current-meds">{lines}</div>',
+                    unsafe_allow_html=True,
+                )
 
             if sel_pat.get("medical_notes"):
                 st.info(f"📋 Medical notes: {sel_pat['medical_notes']}")
@@ -217,14 +250,14 @@ def _tab_new_prescription(medicine_names, med_lookup):
         warnings = check_interactions(", ".join(selected))
         if warnings:
             for w in warnings:
-                st.markdown(f"""
-<div class="interaction-banner">
-    <span style="font-size:18px">⚠️</span>
-    <div>
-        <p style="color:#ffaa00;font-weight:700;margin:0;font-size:13px">Drug Interaction Warning</p>
-        <p style="color:#888;margin:2px 0 0;font-size:12px">{w}</p>
-    </div>
-</div>""", unsafe_allow_html=True)
+                we = escape(str(w))
+                st.markdown(
+                    f'<div class="interaction-banner"><span style="font-size:18px">⚠️</span>'
+                    f'<div><p style="color:#bf360c;font-weight:700;margin:0;font-size:13px">'
+                    f"Drug interaction warning</p>"
+                    f'<p style="color:#4a7a8a;margin:2px 0 0;font-size:12px">{we}</p></div></div>',
+                    unsafe_allow_html=True,
+                )
 
     medicines_str = ", ".join(selected)
 
@@ -333,37 +366,49 @@ def _tab_new_prescription(medicine_names, med_lookup):
                     })
 
         # ── Success display ──
-        st.markdown(f"""
-<div class="success-pulse">
-    ✅ Prescription <code>{prescription_id}</code> created successfully · Order sent to pharmacy
-</div>""", unsafe_allow_html=True)
+        pid_e = escape(str(prescription_id))
+        st.markdown(
+            f'<div class="success-pulse">✅ Prescription <code>{pid_e}</code> created · '
+            f"order sent to pharmacy</div>",
+            unsafe_allow_html=True,
+        )
+
+        pn_e, dn_e = escape(str(patient_name)), escape(str(doctor_name))
+        tr_e = escape(str(treatment))
+        ms_e, ds_e = escape(str(medicines_str)), escape(str(dosage))
+        du_e, cg_e = escape(str(duration or "—")), escape(str(caregiver or "—"))
+        pri_cell = (
+            _status_pill(priority.lower())
+            if priority != "Normal"
+            else '<span style="color:#4a7a8a">Normal</span>'
+        )
+        dt = escape(datetime.now().strftime("%d %b %Y · %H:%M"))
+        tbl = (
+            f'<div class="rx-result"><span class="rx-result-id">Rx {pid_e}</span>'
+            f'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;width:130px;">Patient</td>'
+            f'<td style="color:#0a3d47;font-weight:600;">{pn_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Doctor</td>'
+            f'<td style="color:#0a3d47;">Dr. {dn_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Treatment</td>'
+            f'<td style="color:#0a3d47;">{tr_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Priority</td><td>{pri_cell}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Medicines</td>'
+            f'<td style="color:#2d5c6a;">{ms_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Dosage</td>'
+            f'<td style="color:#2d5c6a;">{ds_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Duration</td>'
+            f'<td style="color:#2d5c6a;">{du_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Caregiver</td>'
+            f'<td style="color:#2d5c6a;">{cg_e}</td></tr>'
+            f'<tr><td style="color:#4a7a8a;padding:4px 0;">Date</td>'
+            f'<td style="color:#2d5c6a;">{dt}</td></tr>'
+            f"</table></div>"
+        )
 
         col_det, col_qr = st.columns([2, 1])
         with col_det:
-            st.markdown(f"""
-<div class="rx-result">
-    <span class="rx-result-id">Rx {prescription_id}</span>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <tr><td style="color:#555;padding:4px 0;width:130px;">Patient</td>
-            <td style="color:#fff;font-weight:600;">{patient_name}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Doctor</td>
-            <td style="color:#fff;">Dr. {doctor_name}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Treatment</td>
-            <td style="color:#fff;">{treatment}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Priority</td>
-            <td>{_status_pill(priority.lower()) if priority!='Normal' else '<span style="color:#555">Normal</span>'}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Medicines</td>
-            <td style="color:#e0e0e0;">{medicines_str}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Dosage</td>
-            <td style="color:#e0e0e0;">{dosage}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Duration</td>
-            <td style="color:#e0e0e0;">{duration or "—"}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Caregiver</td>
-            <td style="color:#e0e0e0;">{caregiver or "—"}</td></tr>
-        <tr><td style="color:#555;padding:4px 0;">Date</td>
-            <td style="color:#555;">{datetime.now().strftime("%d %b %Y · %H:%M")}</td></tr>
-    </table>
-</div>""", unsafe_allow_html=True)
+            st.markdown(tbl, unsafe_allow_html=True)
 
         with col_qr:
             qr_src = qr_url or qr_path
@@ -420,45 +465,60 @@ def _tab_my_prescriptions():
     if sort_new:
         display = sorted(display, key=lambda p: p.get("created_at", datetime.min), reverse=True)
 
+    row_labels = []
     for presc in display:
-        rx_id   = presc.get("prescription_id","—")
-        patient = presc.get("patient_name","—")
-        meds    = presc.get("medicines","—")
-        if len(meds) > 60: meds = meds[:60]+"…"
-        date    = str(presc.get("created_at",""))[:10]
+        rx_id = presc.get("prescription_id", "—")
+        patient = presc.get("patient_name", "—")
+        date = str(presc.get("created_at", ""))[:10]
+        row_labels.append(f"Rx {rx_id} · {patient} · {date}")
 
-        order = get_order_by_prescription(rx_id)
-        status = order.get("status","pending") if order else "—"
+    st.markdown("**Select a prescription:**")
+    pick_ix = st.selectbox(
+        "",
+        list(range(len(display))),
+        format_func=lambda i: row_labels[i],
+        key="doc_my_rx_pick",
+        label_visibility="collapsed",
+    )
+    presc = display[pick_ix]
 
-        label = f"Rx {rx_id}  ·  {patient}  ·  {date}"
-        with st.expander(label):
-            st.markdown(_status_pill(status), unsafe_allow_html=True)
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    rx_id = presc.get("prescription_id", "—")
+    patient = presc.get("patient_name", "—")
+    order = get_order_by_prescription(rx_id)
+    status = order.get("status", "pending") if order else "—"
 
-            col1,col2 = st.columns(2)
-            with col1:
-                st.markdown(f"**Patient:** {patient}")
-                st.markdown(f"**Doctor:** {presc.get('doctor_name','—')}")
-                st.markdown(f"**Caregiver:** {presc.get('caregiver','—')}")
-                st.markdown(f"**Treatment:** {presc.get('treatment_type','—')}")
-            with col2:
-                st.markdown(f"**Medicines:** {presc.get('medicines','—')}")
-                st.markdown(f"**Dosage:** {presc.get('dosage','—')}")
-                if presc.get("duration"):
-                    st.markdown(f"**Duration:** {presc['duration']}")
-                if presc.get("priority") and presc["priority"] != "Normal":
-                    st.markdown(f"**Priority:** {presc['priority']}")
+    st.markdown(
+        f'<div class="doc-rx-detail-h">Rx {escape(str(rx_id))} · '
+        f"{escape(str(patient))} · {escape(str(presc.get('created_at',''))[:10])}</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(_status_pill(status), unsafe_allow_html=True)
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-            if presc.get("clinical_notes"):
-                st.info(f"📋 {presc['clinical_notes']}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"**Patient:** {patient}")
+        st.markdown(f"**Doctor:** {presc.get('doctor_name','—')}")
+        st.markdown(f"**Caregiver:** {presc.get('caregiver','—') or '—'}")
+        st.markdown(f"**Treatment:** {presc.get('treatment_type','—')}")
+    with col2:
+        st.markdown(f"**Medicines:** {presc.get('medicines','—')}")
+        st.markdown(f"**Dosage:** {presc.get('dosage','—')}")
+        if presc.get("duration"):
+            st.markdown(f"**Duration:** {presc['duration']}")
+        if presc.get("priority") and presc["priority"] != "Normal":
+            st.markdown(f"**Priority:** {presc['priority']}")
 
-            qr = presc.get("qr_code_url")
-            if qr:
-                with st.expander("📱 QR Code"):
-                    st.image(qr, width=150)
+    if presc.get("clinical_notes"):
+        st.info(f"📋 {presc['clinical_notes']}")
 
-            if order and order.get("pharmacy_notes"):
-                st.warning(f"💬 Pharmacy: {order['pharmacy_notes']}")
+    qr = presc.get("qr_code_url")
+    if qr:
+        st.markdown("**QR code**")
+        st.image(qr, width=200)
+
+    if order and order.get("pharmacy_notes"):
+        st.warning(f"💬 Pharmacy: {order['pharmacy_notes']}")
 
 
 # ──────────────────────────────────────────────
@@ -470,83 +530,110 @@ def _tab_patient_lookup():
     query = st.text_input("Search by name or phone", placeholder="Type patient name or number…",
                           key="doc_pat_search")
     if not query:
-        # Show all patients as a table
         patients = get_all_patients()
         if patients:
             df = [{
-                "Name":      p.get("name",""),
-                "Age":       p.get("age","—"),
-                "Phone":     p.get("phone","—"),
-                "Blood Grp": p.get("blood_group","—"),
-                "Caregiver": p.get("caregiver","—"),
-                "Active Meds": len([m for m in p.get("medications",[]) if m.get("status")=="active"]),
+                "Name":      p.get("name", ""),
+                "Age":       p.get("age", "—"),
+                "Phone":     p.get("phone", "—"),
+                "Blood Grp": p.get("blood_group", "—"),
+                "Caregiver": p.get("caregiver", "—"),
+                "Active Meds": len([m for m in p.get("medications", []) if m.get("status") == "active"]),
             } for p in patients]
             st.dataframe(df, use_container_width=True, hide_index=True)
+        else:
+            st.info("No patients registered yet.")
         return
 
-    from modules.utils.db import search_patients
     results = search_patients(query)
-
     if not results:
         st.info("No patients found.")
         return
 
-    st.success(f"Found {len(results)} patient(s)")
-    for p in results:
-        pid    = str(p["_id"])
-        name   = p.get("name","Unknown")
-        age    = p.get("age","—")
-        phone  = p.get("phone","—")
-        active = [m for m in p.get("medications",[]) if m.get("status")=="active"]
-        presc  = get_prescriptions_by_patient(name) if True else []
+    st.success(f"Found **{len(results)}** patient(s)")
 
-        with st.expander(f"{name}  ·  Age {age}  ·  {len(active)} active meds"):
-            col1,col2 = st.columns(2)
+    if len(results) > 1:
+        labels = []
+        for p in results:
+            act = [m for m in p.get("medications", []) if m.get("status") == "active"]
+            labels.append(
+                f"{p.get('name', 'Unknown')} · Age {p.get('age', '—')} · {len(act)} active med(s)"
+            )
+        ix = st.selectbox(
+            "Select patient",
+            list(range(len(results))),
+            format_func=lambda i: labels[i],
+            key="doc_lookup_pick",
+        )
+        p = results[ix]
+    else:
+        p = results[0]
 
-            with col1:
-                st.markdown(f"""
-<div class="pat-mini">
-    <p style="color:#555;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:0">Patient Info</p>
-    <p style="color:#fff;font-weight:700;font-size:16px;margin:4px 0">{name}</p>
-    <p style="color:#888;font-size:13px;margin:0">Age: {age} · Phone: {phone}</p>
-    <p style="color:#888;font-size:13px;margin:4px 0 0">Blood Group: {p.get('blood_group','—')}</p>
-    <p style="color:#888;font-size:13px;margin:4px 0 0">Caregiver: {p.get('caregiver','—')}</p>
-</div>""", unsafe_allow_html=True)
+    name = p.get("name", "Unknown")
+    age = p.get("age", "—")
+    phone = p.get("phone", "—")
+    active = [m for m in p.get("medications", []) if m.get("status") == "active"]
+    ne = escape(str(name))
+    ae, pe = escape(str(age)), escape(str(phone))
+    bg = escape(str(p.get("blood_group", "—")))
+    cg = escape(str(p.get("caregiver", "—")))
 
-                if p.get("medical_notes"):
-                    st.warning(f"📋 {p['medical_notes']}")
+    mini = (
+        f'<div class="pat-mini">'
+        f'<p style="color:#4a7a8a;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:0">'
+        f"Patient info</p>"
+        f'<p style="color:#0a3d47;font-weight:700;font-size:16px;margin:4px 0">{ne}</p>'
+        f'<p style="color:#2d5c6a;font-size:13px;margin:0">Age {ae} · 📞 {pe}</p>'
+        f'<p style="color:#2d5c6a;font-size:13px;margin:4px 0 0">Blood: {bg}</p>'
+        f'<p style="color:#2d5c6a;font-size:13px;margin:4px 0 0">Caregiver: {cg}</p>'
+        f"</div>"
+    )
 
-            with col2:
-                st.markdown("**💊 Active Medications**")
-                if active:
-                    for m in active:
-                        st.markdown(f"• **{m.get('name','')}** — {m.get('dosage','')}  "
-                                    f"_{m.get('prescribed_by','')}_")
-                else:
-                    st.caption("No active medications")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(mini, unsafe_allow_html=True)
+        if p.get("medical_notes"):
+            st.warning(f"📋 {p['medical_notes']}")
+    with col2:
+        st.markdown("**💊 Active medications**")
+        if active:
+            med_lines = "".join(
+                f'<p style="margin:4px 0;font-size:13px;color:#2d5c6a;">• '
+                f"<strong>{escape(str(m.get('name','')))}</strong> — "
+                f"{escape(str(m.get('dosage','')))} "
+                f'<span style="color:#4a7a8a;">{escape(str(m.get("prescribed_by","")))}</span></p>'
+                for m in active
+            )
+            st.markdown(
+                f'<div class="doc-current-meds">{med_lines}</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.caption("No active medications")
 
-            # Prescription history
-            try:
-                from modules.utils.db import get_prescriptions_by_patient
-                prescriptions = get_prescriptions_by_patient(name)
-            except Exception:
-                prescriptions = []
-
-            if prescriptions:
-                st.markdown("---")
-                st.markdown("**📋 Prescription History**")
-                for pr in sorted(prescriptions, key=lambda x: x.get("created_at",datetime.min), reverse=True)[:5]:
-                    rx_id  = pr.get("prescription_id","—")
-                    doc    = pr.get("doctor_name","—")
-                    meds   = pr.get("medicines","—")
-                    if len(meds) > 50: meds = meds[:50]+"…"
-                    date   = str(pr.get("created_at",""))[:10]
-                    order  = get_order_by_prescription(rx_id)
-                    status = order.get("status","—") if order else "—"
-                    st.markdown(f"""
-<div class="rx-hist-item">
-    <span class="rx-hist-id">{rx_id}</span>
-    <div class="rx-hist-body">Dr. {doc} · {meds}</div>
-    {_status_pill(status)}
-    <span class="rx-hist-date">{date}</span>
-</div>""", unsafe_allow_html=True)
+    prescriptions = get_prescriptions_by_patient(name)
+    if prescriptions:
+        st.markdown("---")
+        st.markdown("**📋 Prescription history**")
+        for pr in sorted(
+            prescriptions, key=lambda x: x.get("created_at", datetime.min), reverse=True
+        )[:5]:
+            rx_id = pr.get("prescription_id", "—")
+            doc = pr.get("doctor_name", "—")
+            meds = pr.get("medicines", "—")
+            if len(meds) > 50:
+                meds = meds[:50] + "…"
+            date = str(pr.get("created_at", ""))[:10]
+            order = get_order_by_prescription(rx_id)
+            status = order.get("status", "—") if order else "—"
+            rx_e = escape(str(rx_id))
+            doc_e, meds_e, date_e = escape(str(doc)), escape(str(meds)), escape(str(date))
+            hist = (
+                f'<div class="rx-hist-item">'
+                f'<span class="rx-hist-id">{rx_e}</span>'
+                f'<div class="rx-hist-body">Dr. {doc_e} · {meds_e}</div>'
+                f"{_status_pill(status)}"
+                f'<span class="rx-hist-date">{date_e}</span>'
+                f"</div>"
+            )
+            st.markdown(hist, unsafe_allow_html=True)

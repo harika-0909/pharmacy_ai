@@ -129,19 +129,58 @@ ALERT_CSS = """
 
 .summary-strip {
     display:grid;grid-template-columns:repeat(5,1fr);
-    gap:12px;margin-bottom:24px;
+    gap:14px;margin-bottom:24px;
 }
+.summary-strip--four {
+    grid-template-columns:repeat(4,1fr);
+}
+/* Base tile — tinted glass on sky blue (#90e0ef family) */
 .summary-card {
-    background:rgba(255,255,255,.9);border:1px solid rgba(72,184,206,.45);border-radius:12px;
-    padding:16px;text-align:center;
-    box-shadow:0 2px 12px rgba(13,76,92,0.07);
+    border-radius:14px;
+    padding:18px 14px;
+    text-align:center;
+    transition:transform .18s ease, box-shadow .2s ease;
+    box-shadow:0 4px 16px rgba(13,76,92,0.1);
+    border-width:1px;
+    border-style:solid;
+    backdrop-filter:blur(6px);
 }
-.summary-count { font-size:26px;font-weight:800;margin:0; }
-.summary-label { color:#2d5c6a;font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin:4px 0 0; }
-.count-critical{ color:#c62828 !important; }
-.count-warning { color:#c47a00 !important; }
-.count-info   { color:#0d5c7a !important; }
-.count-high   { color:#6b4c9a !important; }
+.summary-card:hover {
+    transform:translateY(-3px);
+    box-shadow:0 10px 28px rgba(13,76,92,0.14);
+}
+.summary-card--critical {
+    background:linear-gradient(155deg,rgba(255,236,238,.97),rgba(255,218,222,.88));
+    border-color:rgba(198,40,40,.42);
+    box-shadow:0 4px 18px rgba(198,40,40,.12);
+}
+.summary-card--warnings {
+    background:linear-gradient(155deg,rgba(255,248,230,.97),rgba(255,235,200,.88));
+    border-color:rgba(196,122,0,.38);
+    box-shadow:0 4px 18px rgba(196,122,0,.1);
+}
+.summary-card--missed {
+    background:linear-gradient(155deg,rgba(245,240,255,.97),rgba(232,224,252,.9));
+    border-color:rgba(107,76,154,.35);
+    box-shadow:0 4px 18px rgba(107,76,154,.1);
+}
+.summary-card--upcoming {
+    background:linear-gradient(155deg,rgba(224,247,252,.98),rgba(184,235,245,.85));
+    border-color:rgba(72,184,206,.55);
+    box-shadow:0 4px 18px rgba(72,184,206,.15);
+}
+.summary-card--expiry {
+    background:linear-gradient(155deg,rgba(230,250,245,.97),rgba(200,240,230,.88));
+    border-color:rgba(13,107,90,.32);
+    box-shadow:0 4px 16px rgba(13,107,90,.1);
+}
+.summary-count { font-size:28px;font-weight:800;margin:0;line-height:1.1;letter-spacing:-0.5px; }
+.summary-label { color:#0a3d47;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.85px;margin:8px 0 0;opacity:.88; }
+.count-critical{ color:#b71c1c !important; }
+.count-warning { color:#b8860b !important; }
+.count-info   { color:#086981 !important; }
+.count-high   { color:#5e35b1 !important; }
+.count-expiry { color:#0d6b5c !important; }
 .count-success { color:#0d8a5b !important; }
 
 .section-hdr {
@@ -159,12 +198,15 @@ ALERT_CSS = """
 .empty-text    { font-size:14px; }
 
 .ack-log-row {
-    display:flex;gap:10px;align-items:center;
-    padding:8px 12px;border-radius:8px;margin-bottom:6px;
-    background:rgba(255,255,255,.88); border:1px solid rgba(72,184,206,.4);
+    display:flex;gap:12px;align-items:center;
+    padding:12px 14px;border-radius:12px;margin-bottom:8px;
+    background:linear-gradient(120deg,rgba(255,255,255,.92),rgba(232,248,252,.75));
+    border:1px solid rgba(72,184,206,.45);
+    box-shadow:0 2px 10px rgba(13,76,92,0.06);
+    border-left:4px solid rgba(72,184,206,.55);
 }
-.ack-log-msg  { flex:1;color:#0a3d47;font-size:13px; }
-.ack-log-meta { color:#4a7a8a;font-size:11px;flex-shrink:0; }
+.ack-log-msg  { flex:1;color:#0a3d47;font-size:13px;font-weight:500; }
+.ack-log-meta { color:#4a7a8a;font-size:11px;flex-shrink:0;font-weight:500; }
 
 .refresh-bar {
     display:flex;align-items:center;gap:8px;
@@ -193,8 +235,57 @@ ALERT_CSS = """
     box-shadow:0 2px 10px rgba(13,76,92,0.06) !important;
 }
 
+/* Main-panel buttons only: light sky-teal (Export CSV, Restock, Clear, etc.) */
+section[data-testid="stMain"] .stButton > button,
+section[data-testid="stMain"] .stDownloadButton > button {
+    background: linear-gradient(180deg, #dff6fb, #b8ebf5) !important;
+    color: #0a3d47 !important;
+    border: 1px solid rgba(72, 184, 206, 0.75) !important;
+    box-shadow: 0 2px 10px rgba(13, 76, 92, 0.1) !important;
+}
+section[data-testid="stMain"] .stButton > button p,
+section[data-testid="stMain"] .stButton > button span,
+section[data-testid="stMain"] .stButton > button label,
+section[data-testid="stMain"] .stDownloadButton > button p,
+section[data-testid="stMain"] .stDownloadButton > button span {
+    background: transparent !important;
+    color: #0a3d47 !important;
+    /* Global theme puts border/padding on inner nodes — kills the “box around text” */
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+section[data-testid="stMain"] .stButton > button:hover,
+section[data-testid="stMain"] .stDownloadButton > button:hover {
+    background: linear-gradient(180deg, #eaf9fc, #c8f0f7) !important;
+    border-color: rgba(72, 184, 206, 0.95) !important;
+    color: #062a32 !important;
+}
+section[data-testid="stMain"] .stButton > button:hover p,
+section[data-testid="stMain"] .stButton > button:hover span,
+section[data-testid="stMain"] .stButton > button:hover label,
+section[data-testid="stMain"] .stDownloadButton > button:hover p,
+section[data-testid="stMain"] .stDownloadButton > button:hover span {
+    color: #062a32 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+section[data-testid="stMain"] .stButton > button:active,
+section[data-testid="stMain"] .stDownloadButton > button:active {
+    background: #90e0ef !important;
+    border-color: #48b8ce !important;
+    transform: translateY(0) !important;
+}
+section[data-testid="stMain"] .stButton > button:focus-visible,
+section[data-testid="stMain"] .stDownloadButton > button:focus-visible {
+    box-shadow: 0 0 0 2px rgba(144, 224, 239, 0.9), 0 2px 10px rgba(13, 76, 92, 0.1) !important;
+}
+
 @media(max-width:600px){
-    .summary-strip{grid-template-columns:repeat(2,1fr);}
+    .summary-strip, .summary-strip--four { grid-template-columns:repeat(2,1fr); }
 }
 </style>
 """
@@ -521,27 +612,27 @@ def show_alerts():
 
     total = len(ls) + len(md) + len(rem) + len(po) + len(exp)
 
-    # Summary strip
+    # Summary strip — tinted tiles for sky-blue page
     st.markdown(f"""
-<div class="summary-strip">
-    <div class="summary-card">
+<div class="summary-strip" style="color-scheme:light;">
+    <div class="summary-card summary-card--critical">
         <p class="summary-count count-critical">{len(crit_ls) + len(crit_exp)}</p>
         <p class="summary-label">Critical</p>
     </div>
-    <div class="summary-card">
+    <div class="summary-card summary-card--warnings">
         <p class="summary-count count-warning">{len(warn_ls) + len(po) + len(warn_exp)}</p>
         <p class="summary-label">Warnings</p>
     </div>
-    <div class="summary-card">
+    <div class="summary-card summary-card--missed">
         <p class="summary-count count-high">{len(md)}</p>
         <p class="summary-label">Missed Doses</p>
     </div>
-    <div class="summary-card">
+    <div class="summary-card summary-card--upcoming">
         <p class="summary-count count-info">{len(rem)}</p>
         <p class="summary-label">Upcoming Doses</p>
     </div>
-    <div class="summary-card">
-        <p class="summary-count count-warning">{len(exp)}</p>
+    <div class="summary-card summary-card--expiry">
+        <p class="summary-count count-expiry">{len(exp)}</p>
         <p class="summary-label">Near Expiry</p>
     </div>
 </div>""", unsafe_allow_html=True)
@@ -940,11 +1031,25 @@ def show_pharmacy_alerts():
         _empty("All inventory healthy · No delayed orders · No near-expiry items.")
         return
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("🔴 Critical Stock", len(crit))
-    col2.metric("🟡 Low Stock",      len(warn))
-    col3.metric("⏳ Delayed Orders", len(po))
-    col4.metric("🗓️ Near Expiry",    len(exp))
+    st.markdown(f"""
+<div class="summary-strip summary-strip--four" style="color-scheme:light;">
+    <div class="summary-card summary-card--critical">
+        <p class="summary-count count-critical">{len(crit)}</p>
+        <p class="summary-label">🔴 Critical Stock</p>
+    </div>
+    <div class="summary-card summary-card--warnings">
+        <p class="summary-count count-warning">{len(warn)}</p>
+        <p class="summary-label">🟡 Low Stock</p>
+    </div>
+    <div class="summary-card summary-card--upcoming">
+        <p class="summary-count count-info">{len(po)}</p>
+        <p class="summary-label">⏳ Delayed Orders</p>
+    </div>
+    <div class="summary-card summary-card--expiry">
+        <p class="summary-count count-expiry">{len(exp)}</p>
+        <p class="summary-label">🗓️ Near Expiry</p>
+    </div>
+</div>""", unsafe_allow_html=True)
 
     tabs = st.tabs(["📦 Stock", "🗓️ Expiry", "⏳ Orders"])
     _tab_low_stock(tabs[0], ls, username)
@@ -958,7 +1063,6 @@ def show_pharmacy_alerts():
 
 def show_dashboard_widget():
     """Compact alert summary for the main dashboard."""
-    st.markdown(ALERT_CSS, unsafe_allow_html=True)
     try:
         seed_inventory(INVENTORY)
         ls  = get_low_stock_alerts()

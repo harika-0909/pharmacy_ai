@@ -271,18 +271,42 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked
 }
 
 /* ===== SELECT / MULTISELECT ===== */
+/* BaseWeb used to use transparent here — sky page showed through; match text inputs (#fff). */
 .stSelectbox > div > div,
 .stMultiSelect > div > div {
-    background: var(--sp-surface) !important;
+    background: #ffffff !important;
     border: 1px solid var(--sp-border-light) !important;
     border-radius: 8px !important;
     color: var(--sp-text) !important;
 }
-[data-baseweb="select"] { background: transparent !important; }
+.stSelectbox [data-baseweb="select"],
+.stMultiSelect [data-baseweb="select"] {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+}
+[data-baseweb="select"] > div:first-child {
+    background-color: #ffffff !important;
+}
+.stMultiSelect [data-baseweb="input"] input {
+    background: transparent !important;
+    color: var(--sp-text) !important;
+}
 [data-baseweb="tag"] {
     background: var(--sp-accent) !important;
     color: #fff !important;
     border-radius: 4px !important;
+}
+/* Dropdown menus from select / multiselect */
+[data-baseweb="menu"],
+[data-baseweb="popover"] [data-baseweb="menu"] {
+    background: #ffffff !important;
+    border: 1px solid var(--sp-border-light) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 18px rgba(13, 76, 92, 0.12) !important;
+}
+[data-baseweb="menu"] li,
+[data-baseweb="menu"] [role="option"] {
+    color: var(--sp-text) !important;
 }
 
 /* ===== TABS ===== */

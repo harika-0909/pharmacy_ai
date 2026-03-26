@@ -15,6 +15,47 @@ from modules.utils.db import (
 from modules.utils.jwt_auth import hash_password
 from modules.utils.db import create_user
 
+# Sky-themed panels (no expanders — avoids broken Material icon ligatures in headers)
+ADMIN_CSS = """
+<style>
+.admin-section-head {
+    display:flex; gap:14px; align-items:flex-start;
+    background:linear-gradient(135deg, rgba(255,255,255,.95), rgba(232,248,252,.92));
+    border:1px solid rgba(72,184,206,.45); border-radius:12px;
+    padding:16px 18px; margin-bottom:14px;
+    box-shadow:0 2px 12px rgba(13,76,92,.06);
+}
+.admin-section-icon { font-size:22px; line-height:1; flex-shrink:0; }
+.admin-section-title { margin:0; font-size:15px; font-weight:700; color:#0a3d47; }
+.admin-section-sub { margin:4px 0 0; font-size:12px; color:#2d5c6a; line-height:1.45; }
+.admin-divider {
+    height:1px; background:rgba(72,184,206,.35); margin:20px 0 14px; border:0;
+}
+.admin-catalog-bar {
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin:6px 0 12px;
+}
+.admin-catalog-bar strong { color:#0a3d47; font-size:14px; }
+.admin-meta { font-size:12px; color:#4a7a8a; }
+.admin-cat-pill {
+    display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.45px; padding:2px 8px; border-radius:20px; margin-right:8px;
+    background:rgba(197,238,246,.75); color:#086981; border:1px solid rgba(72,184,206,.45);
+    vertical-align:middle;
+}
+</style>
+"""
+
+MED_CATEGORIES = [
+    "Pain Relief", "Antibiotic", "Diabetes", "Cardiovascular",
+    "Gastrointestinal", "Respiratory", "Antihistamine",
+    "Psychiatric", "Supplement", "Dermatology", "Other",
+]
+DOSAGE_FORMS = [
+    "Tablet", "Capsule", "Syrup", "Injection", "Inhaler",
+    "Cream", "Drops", "Powder", "Patch", "Other",
+]
+
 
 def show():
     st.title("Admin Panel")
@@ -78,114 +119,184 @@ def show_analytics():
             st.warning(f"{item.get('medicine_name')} — {item.get('stock', 0)} units left")
 
 
-def show_medicine_catalog():
-    """Admin manages the medicine catalog that doctors pick from."""
-    st.markdown("##### Medicine Catalog")
-    st.caption("Add medicines here. Doctors will select from this list when creating prescriptions.")
-
-    # Add medicine form
-    with st.expander("➕ Add New Medicine", expanded=False):
-        with st.form("add_medicine_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                name = st.text_input("Medicine Name *", placeholder="e.g. Paracetamol")
-                category = st.selectbox("Category", [
-                    "Pain Relief", "Antibiotic", "Diabetes", "Cardiovascular",
-                    "Gastrointestinal", "Respiratory", "Antihistamine",
-                    "Psychiatric", "Supplement", "Dermatology", "Other"
-                ])
-            with col2:
-                dosage_form = st.selectbox("Dosage Form", [
-                    "Tablet", "Capsule", "Syrup", "Injection", "Inhaler",
-                    "Cream", "Drops", "Powder", "Patch", "Other"
-                ])
-                strength = st.text_input("Strength", placeholder="e.g. 500mg")
-
-            if st.form_submit_button("Add Medicine", use_container_width=True):
-                if name:
-                    success, msg = add_medicine({
-                        "name": name.strip(),
-                        "category": category,
-                        "dosage_form": dosage_form,
-                        "strength": strength,
-                    })
-                    if success:
-                        st.success(f"{name} added to catalog")
-                        st.rerun()
-                    else:
-                        st.error(msg)
-                else:
-                    st.error("Medicine name is required")
-
-    # Display existing medicines
-    medicines = get_all_medicines()
-
-    if medicines:
-        st.markdown(f"**{len(medicines)} medicines in catalog**")
-
-        # Group by category
-        categories = {}
-        for med in medicines:
-            cat = med.get("category", "Other")
-            if cat not in categories:
-                categories[cat] = []
-            categories[cat].append(med)
-
-        for cat, meds in sorted(categories.items()):
-            with st.expander(f"{cat} ({len(meds)})"):
-                for med in meds:
-                    med_id = str(med["_id"])
-                    col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
-                    with col1:
-                        st.write(f"**{med['name']}**")
-                    with col2:
-                        st.write(med.get("dosage_form", ""))
-                    with col3:
-                        st.write(med.get("strength", ""))
-                    with col4:
-                        if st.button("✕", key=f"del_med_{med_id}"):
-                            delete_medicine(med_id)
-                            st.rerun()
-    else:
-        st.info("No medicines in catalog. Add some above or seed defaults.")
-        if st.button("Seed Default Medicines"):
-            seed_medicine_catalog()
+def _medicine_row(med, *, show_category: bool, key_suffix: str):
+    """One catalog row: name, meta, delete."""
+    med_id = str(med["_id"])
+    col1, col2, col3, col4 = st.columns([3.2, 2, 2, 1])
+    with col1:
+        if show_category:
+            cat = med.get("category", "Other") or "Other"
+            st.markdown(
+                f'<span class="admin-cat-pill">{cat}</span> **{med["name"]}**',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(f"**{med['name']}**")
+    with col2:
+        st.caption(med.get("dosage_form", "—") or "—")
+    with col3:
+        st.caption(med.get("strength", "—") or "—")
+    with col4:
+        if st.button("Remove", key=f"del_med_{med_id}_{key_suffix}", help="Remove from catalog"):
+            delete_medicine(med_id)
             st.rerun()
 
 
-def show_user_management():
-    st.markdown("##### User Management")
+def show_medicine_catalog():
+    """Admin manages the medicine catalog that doctors pick from."""
+    st.markdown(ADMIN_CSS, unsafe_allow_html=True)
+    st.markdown("##### Medicine Catalog")
+    st.caption("Add medicines here. Doctors will select from this list when creating prescriptions.")
 
-    with st.expander("➕ Add User", expanded=False):
-        with st.form("admin_add_user"):
-            col1, col2 = st.columns(2)
-            with col1:
-                new_username = st.text_input("Username")
-                new_password = st.text_input("Password", type="password")
-            with col2:
-                new_role = st.selectbox("Role", ["doctor", "pharmacy", "caregiver", "admin"])
-            if st.form_submit_button("Create User", use_container_width=True):
-                if new_username and new_password:
-                    hashed = hash_password(new_password)
-                    success, msg = create_user(new_username, hashed, new_role)
-                    if success:
-                        st.success(f"User '{new_username}' created")
-                        st.rerun()
-                    else:
-                        st.error(msg)
+    st.markdown("""
+<div class="admin-section-head">
+    <span class="admin-section-icon">➕</span>
+    <div>
+        <p class="admin-section-title">Add new medicine</p>
+        <p class="admin-section-sub">Name is required. Strength and category help doctors pick the right item.</p>
+    </div>
+</div>""", unsafe_allow_html=True)
+
+    with st.form("add_medicine_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("Medicine name *", placeholder="e.g. Paracetamol")
+            category = st.selectbox("Category", MED_CATEGORIES)
+        with col2:
+            dosage_form = st.selectbox("Dosage form", DOSAGE_FORMS)
+            strength = st.text_input("Strength", placeholder="e.g. 500mg")
+        submitted = st.form_submit_button("Add to catalog", use_container_width=True)
+        if submitted:
+            if name and name.strip():
+                success, msg = add_medicine({
+                    "name": name.strip(),
+                    "category": category,
+                    "dosage_form": dosage_form,
+                    "strength": strength,
+                })
+                if success:
+                    st.success(f"Added {name.strip()} to the catalog.")
+                    st.rerun()
+                else:
+                    st.error(msg)
+            else:
+                st.error("Medicine name is required.")
+
+    medicines = get_all_medicines()
+    if not medicines:
+        st.info("No medicines in catalog. Add entries above or seed defaults.")
+        if st.button("Seed default medicines"):
+            seed_medicine_catalog()
+            st.rerun()
+        return
+
+    st.markdown('<div class="admin-divider"></div>', unsafe_allow_html=True)
+    categories = {}
+    for med in medicines:
+        cat = med.get("category", "Other") or "Other"
+        categories.setdefault(cat, []).append(med)
+    cat_list = sorted(categories.keys())
+
+    st.markdown(
+        f"""<div class="admin-catalog-bar">
+            <strong>Catalog</strong>
+            <span class="admin-meta">{len(medicines)} medicines · filter or browse everything</span>
+        </div>""",
+        unsafe_allow_html=True,
+    )
+    view = st.radio(
+        "Browse",
+        ["By category", "All medicines (A–Z)"],
+        horizontal=True,
+        key="admin_med_browse_mode",
+        label_visibility="collapsed",
+    )
+
+    if view == "By category":
+        sel = st.selectbox(
+            "Category",
+            cat_list,
+            key="admin_med_cat_pick",
+        )
+        st.caption(f"{len(categories[sel])} in **{sel}** — form · strength · remove")
+        for med in sorted(categories[sel], key=lambda m: (m.get("name") or "").lower()):
+            _medicine_row(med, show_category=False, key_suffix=f"cat_{sel}")
+    else:
+        flat = sorted(medicines, key=lambda m: (m.get("name") or "").lower())
+        st.caption("Sorted alphabetically. Category shown on each row.")
+        for med in flat:
+            _medicine_row(med, show_category=True, key_suffix="all")
+
+
+def show_user_management():
+    st.markdown(ADMIN_CSS, unsafe_allow_html=True)
+    st.markdown("##### User Management")
+    st.caption("Create logins for doctors, pharmacy staff, caregivers, or other admins.")
+
+    st.markdown("""
+<div class="admin-section-head">
+    <span class="admin-section-icon">👤</span>
+    <div>
+        <p class="admin-section-title">Create user</p>
+        <p class="admin-section-sub">Passwords are stored hashed. The built-in <strong>admin</strong> account cannot be removed here.</p>
+    </div>
+</div>""", unsafe_allow_html=True)
+
+    with st.form("admin_add_user"):
+        col1, col2 = st.columns(2)
+        with col1:
+            new_username = st.text_input("Username", placeholder="e.g. doctor2")
+            new_password = st.text_input("Password", type="password")
+        with col2:
+            new_role = st.selectbox(
+                "Role",
+                ["doctor", "pharmacy", "caregiver", "admin"],
+                help="Sets menu access after next login.",
+            )
+        submitted = st.form_submit_button("Create user", use_container_width=True)
+        if submitted:
+            if new_username and new_password:
+                hashed = hash_password(new_password)
+                success, msg = create_user(new_username.strip(), hashed, new_role)
+                if success:
+                    st.success(f"User **{new_username.strip()}** created.")
+                    st.rerun()
+                else:
+                    st.error(msg)
+            else:
+                st.error("Username and password are required.")
 
     users = get_all_users()
-    if users:
-        data = [{"Username": u.get("username"), "Role": u.get("role", "").upper(), "Created": str(u.get("created_at", ""))[:10]} for u in users]
-        st.dataframe(pd.DataFrame(data), use_container_width=True)
+    if not users:
+        return
 
-        st.markdown("---")
-        usernames = [u.get("username") for u in users if u.get("username") != "admin"]
-        if usernames:
-            to_delete = st.selectbox("Delete user", usernames)
-            if st.button("Delete"):
+    st.markdown('<div class="admin-divider"></div>', unsafe_allow_html=True)
+    st.markdown("**Accounts**")
+    st.caption("All users in the system.")
+    data = [
+        {
+            "Username": u.get("username"),
+            "Role": u.get("role", "").upper(),
+            "Created": str(u.get("created_at", ""))[:10],
+        }
+        for u in users
+    ]
+    st.dataframe(pd.DataFrame(data), use_container_width=True, hide_index=True)
+
+    usernames = [u.get("username") for u in users if u.get("username") != "admin"]
+    if usernames:
+        st.markdown('<div class="admin-divider"></div>', unsafe_allow_html=True)
+        st.markdown("**Remove account**")
+        st.caption("Select a user and confirm removal. Cannot delete **admin**.")
+        rm_col1, rm_col2 = st.columns([3, 1])
+        with rm_col1:
+            to_delete = st.selectbox("User to remove", usernames, label_visibility="collapsed", key="admin_del_user")
+        with rm_col2:
+            st.write("")
+            st.write("")
+            if st.button("Delete user", key="admin_del_btn"):
                 delete_user(to_delete)
-                st.success(f"Deleted {to_delete}")
+                st.success(f"Removed **{to_delete}**.")
                 st.rerun()
 
 

@@ -2,6 +2,7 @@
 Patient Management — Premium Rebuild
 Tabs: All Patients (cards+table) · Register · Search · Adherence Tracker
 """
+from html import escape
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -190,20 +191,24 @@ def show_all():
     active = [m for m in meds if m.get("status") == "active"]
     inactive = [m for m in meds if m.get("status") != "active"]
 
-    blood_html = f'<span class="blood-badge">{blood}</span>' if blood else ""
-    st.markdown(f"""
-<div class="pat-card">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-            <p class="pat-name">{name}</p>
-            <p class="pat-sub">Age {age} · 📞 {phone} · 👨‍👩‍👦 {cg} {blood_html}</p>
-        </div>
-        <div style="text-align:right">
-            <p style="color:#2d5c6a;font-size:11px;margin:0">Active Medications</p>
-            <p style="color:#0a3d47;font-size:22px;font-weight:800;margin:0">{len(active)}</p>
-        </div>
-    </div>
-</div>""", unsafe_allow_html=True)
+    ne = escape(str(name))
+    ae, pe, cge = escape(str(age)), escape(str(phone)), escape(str(cg))
+    blood_html = (
+        f'<span class="blood-badge">{escape(str(blood))}</span>' if blood else ""
+    )
+    pat_card = (
+        f'<div class="pat-card">'
+        f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+        f"<div>"
+        f'<p class="pat-name">{ne}</p>'
+        f'<p class="pat-sub">Age {ae} · 📞 {pe} · 👨‍👩‍👦 {cge} {blood_html}</p>'
+        f"</div>"
+        f'<div style="text-align:right">'
+        f'<p style="color:#2d5c6a;font-size:11px;margin:0">Active Medications</p>'
+        f'<p style="color:#0a3d47;font-size:22px;font-weight:800;margin:0">{len(active)}</p>'
+        f"</div></div></div>"
+    )
+    st.markdown(pat_card, unsafe_allow_html=True)
 
     if notes:
         st.warning(f"📋 {notes}")
@@ -303,13 +308,17 @@ def show_all():
             order = get_order_by_prescription(rx_id)
             status = order.get("status", "—") if order else "—"
 
-            st.markdown(f"""
-<div class="hist-row">
-    <span class="hist-rx">{rx_id}</span>
-    <span class="hist-med">Dr. {doc} · {meds_s}</span>
-    {_status_pill(status)}
-    <span class="hist-date">{date}</span>
-</div>""", unsafe_allow_html=True)
+            rx_e = escape(str(rx_id))
+            doc_e, meds_e, date_e = escape(str(doc)), escape(str(meds_s)), escape(str(date))
+            hist = (
+                f'<div class="hist-row">'
+                f'<span class="hist-rx">{rx_e}</span>'
+                f'<span class="hist-med">Dr. {doc_e} · {meds_e}</span>'
+                f"{_status_pill(status)}"
+                f'<span class="hist-date">{date_e}</span>'
+                f"</div>"
+            )
+            st.markdown(hist, unsafe_allow_html=True)
     else:
         st.caption("No prescription history")
 
@@ -393,19 +402,24 @@ def show_search():
         cg     = p.get("caregiver","—")
         active = [m for m in p.get("medications",[]) if m.get("status")=="active"]
 
-        st.markdown(f"""
-<div class="search-card">
-    <div class="search-avatar">👤</div>
-    <div style="flex:1">
-        <p style="color:#0a3d47;font-weight:700;font-size:15px;margin:0">{name}</p>
-        <p style="color:#2d5c6a;font-size:12px;margin:3px 0">
-            Age {age} · 📞 {phone}
-            {' · <span class="blood-badge">' + blood + '</span>' if blood else ''}
-        </p>
-        <p style="color:#4a7a8a;font-size:12px;margin:3px 0">Caregiver: {cg}</p>
-        <p style="color:#4a7a8a;font-size:12px;margin:3px 0">{len(active)} active medication(s)</p>
-    </div>
-</div>""", unsafe_allow_html=True)
+        # No indented HTML lines — 4+ leading spaces make Markdown treat them as code blocks
+        # and raw </p></div> show up in the UI.
+        ne, ae, pe = escape(str(name)), escape(str(age)), escape(str(phone))
+        ce, cge = escape(str(blood)), escape(str(cg))
+        blood_part = (
+            f' · <span class="blood-badge">{ce}</span>' if blood else ""
+        )
+        card = (
+            f'<div class="search-card">'
+            f'<div class="search-avatar">👤</div>'
+            f'<div style="flex:1">'
+            f'<p style="color:#0a3d47;font-weight:700;font-size:15px;margin:0">{ne}</p>'
+            f'<p style="color:#2d5c6a;font-size:12px;margin:3px 0">Age {ae} · 📞 {pe}{blood_part}</p>'
+            f'<p style="color:#4a7a8a;font-size:12px;margin:3px 0">Caregiver: {cge}</p>'
+            f'<p style="color:#4a7a8a;font-size:12px;margin:3px 0">{len(active)} active medication(s)</p>'
+            f"</div></div>"
+        )
+        st.markdown(card, unsafe_allow_html=True)
 
         st.markdown(f"**Full details — {name}**")
         if active:
