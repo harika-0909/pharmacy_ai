@@ -235,6 +235,35 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked
     border: 1px solid var(--sp-accent) !important;
     border-radius: 8px !important;
 }
+/* Main-area download buttons: light sky + legible text (global span {} was forcing dark label on dark bg) */
+section[data-testid="stMain"] .stDownloadButton > button {
+    background: linear-gradient(180deg, #dff6fb, #b8ebf5) !important;
+    color: #0a3d47 !important;
+    border: 1px solid rgba(72, 184, 206, 0.75) !important;
+    box-shadow: 0 2px 10px rgba(13, 76, 92, 0.08) !important;
+}
+section[data-testid="stMain"] .stDownloadButton > button p,
+section[data-testid="stMain"] .stDownloadButton > button span,
+section[data-testid="stMain"] .stDownloadButton > button label {
+    background: transparent !important;
+    color: #0a3d47 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+section[data-testid="stMain"] .stDownloadButton > button:hover {
+    background: linear-gradient(180deg, #eaf9fc, #c8f0f7) !important;
+    border-color: rgba(72, 184, 206, 0.95) !important;
+    color: #062a32 !important;
+}
+section[data-testid="stMain"] .stDownloadButton > button:hover p,
+section[data-testid="stMain"] .stDownloadButton > button:hover span,
+section[data-testid="stMain"] .stDownloadButton > button:hover label {
+    color: #062a32 !important;
+}
 
 /* ===== INPUT FIELDS ===== */
 .stTextInput > div > div > input,
@@ -291,10 +320,27 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] label[data-checked
     background: transparent !important;
     color: var(--sp-text) !important;
 }
-[data-baseweb="tag"] {
-    background: var(--sp-accent) !important;
-    color: #fff !important;
-    border-radius: 4px !important;
+/* Multiselect chips — light sky (global span {} was forcing dark text on dark accent) */
+.stMultiSelect [data-baseweb="tag"] {
+    background: linear-gradient(180deg, #eaf9fc, #c5eef6) !important;
+    border: 1px solid rgba(72, 184, 206, 0.75) !important;
+    border-radius: 6px !important;
+    color: #0a3d47 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+.stMultiSelect [data-baseweb="tag"] span,
+.stMultiSelect [data-baseweb="tag"] p,
+.stMultiSelect [data-baseweb="tag"] label {
+    color: #0a3d47 !important;
+}
+.stMultiSelect [data-baseweb="tag"] svg,
+.stMultiSelect [data-baseweb="tag"] path {
+    fill: #2d5c6a !important;
+}
+.stMultiSelect [data-baseweb="tag"]:hover {
+    border-color: #48b8ce !important;
+    background: linear-gradient(180deg, #dff6fb, #b8ebf5) !important;
 }
 /* Dropdown menus from select / multiselect */
 [data-baseweb="menu"],

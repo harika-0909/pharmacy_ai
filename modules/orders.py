@@ -1,6 +1,7 @@
 """
 Orders Module — Clean labels, no broken emoji
 """
+from html import escape
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -64,11 +65,12 @@ def show():
     st.divider()
 
     # Order Details — select-based UI (no expander = no icon overlap)
-    st.markdown("""
-    <div style="margin-bottom: 12px; padding: 10px 0 6px 0; border-bottom: 1px solid rgba(72,184,206,0.45);">
-        <span style="color:#2d5c6a; font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Order Details</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        '<div style="margin-bottom:12px;padding:10px 0 6px 0;border-bottom:1px solid rgba(72,184,206,0.45);">'
+        '<span style="color:#2d5c6a;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">'
+        "Order Details</span></div>",
+        unsafe_allow_html=True,
+    )
 
     status_icons = {"pending": "🟡", "processing": "🔵", "dispensed": "🟣", "completed": "🟢", "cancelled": "🔴"}
     options = []
@@ -94,32 +96,44 @@ def show():
         presc_id = order.get("prescription_id", "")
         patient = order.get("patient_name", "")
 
-        # Detail card
-        st.markdown(f"""
-        <div style="background:rgba(255,255,255,0.9); border:1px solid rgba(72,184,206,0.55); border-radius:10px; padding:20px; margin-top:12px; box-shadow:0 2px 12px rgba(13,76,92,0.08);">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px;">
-                <div>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Prescription</p>
-                    <p style="color:#0a3d47;font-weight:600;margin:0;">{presc_id}</p>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Patient</p>
-                    <p style="color:#0a3d47;margin:0;">{patient}</p>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Doctor</p>
-                    <p style="color:#0a3d47;margin:0;">{order.get('doctor_name', '—')}</p>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Treatment</p>
-                    <p style="color:#0a3d47;margin:0;">{order.get('treatment_type', '—')}</p>
-                </div>
-                <div>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Medicines</p>
-                    <p style="color:#0a3d47;margin:0;">{order.get('medicines', '—')}</p>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Dosage</p>
-                    <p style="color:#0a3d47;margin:0;">{order.get('dosage', '—')}</p>
-                    <p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Status · Created</p>
-                    <p style="color:#0a3d47;margin:0;">{status.upper()} · {str(order.get('created_at', ''))[:16]}</p>
-                    {('<p style="color:#2d5c6a;font-size:11px;margin-top:8px;">Updated by: ' + str(order.get('updated_by', '')) + '</p>') if order.get('updated_by') else ''}
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Detail card — no indented HTML (Markdown treats 4+ spaces as code → stray </div> on screen)
+        pid_e = escape(str(presc_id))
+        pat_e = escape(str(patient))
+        doc_e = escape(str(order.get("doctor_name", "—")))
+        tr_e = escape(str(order.get("treatment_type", "—")))
+        med_e = escape(str(order.get("medicines", "—")))
+        dose_e = escape(str(order.get("dosage", "—")))
+        stat_e = escape(str(status.upper()))
+        dt_e = escape(str(order.get("created_at", ""))[:16])
+        upd_html = ""
+        if order.get("updated_by"):
+            upd_html = (
+                '<p style="color:#2d5c6a;font-size:11px;margin-top:8px;">Updated by: '
+                f"{escape(str(order.get('updated_by', '')))}</p>"
+            )
+        card = (
+            '<div style="background:rgba(255,255,255,0.9);border:1px solid rgba(72,184,206,0.55);'
+            'border-radius:10px;padding:20px;margin-top:12px;box-shadow:0 2px 12px rgba(13,76,92,0.08);">'
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;">'
+            "<div>"
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Prescription</p>'
+            f'<p style="color:#0a3d47;font-weight:600;margin:0;">{pid_e}</p>'
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Patient</p>'
+            f'<p style="color:#0a3d47;margin:0;">{pat_e}</p>'
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Doctor</p>'
+            f'<p style="color:#0a3d47;margin:0;">{doc_e}</p>'
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Treatment</p>'
+            f'<p style="color:#0a3d47;margin:0;">{tr_e}</p>'
+            "</div><div>"
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:0 0 4px 0;">Medicines</p>'
+            f'<p style="color:#0a3d47;margin:0;">{med_e}</p>'
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Dosage</p>'
+            f'<p style="color:#0a3d47;margin:0;">{dose_e}</p>'
+            '<p style="color:#2d5c6a;font-size:11px;text-transform:uppercase;margin:12px 0 4px 0;">Status · Created</p>'
+            f'<p style="color:#0a3d47;margin:0;">{stat_e} · {dt_e}</p>'
+            f"{upd_html}</div></div></div>"
+        )
+        st.markdown(card, unsafe_allow_html=True)
 
         if order.get("pharmacy_notes"):
             st.info(f"Notes: {order['pharmacy_notes']}")
